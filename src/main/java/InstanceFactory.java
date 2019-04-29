@@ -79,6 +79,24 @@ public class InstanceFactory {
         rv.setName(instance.getAttribute("name"));
         rv.setUsername(instance.getAttribute("username"));
 
+        String backButtonURL, backButtonText, searchBarText;
+
+        backButtonURL = instance.getElementsByTagName("back-button-url")
+                .item(0)
+                .getTextContent();
+
+        backButtonText = instance.getElementsByTagName("back-button-text")
+                .item(0)
+                .getTextContent();
+
+        searchBarText = instance.getElementsByTagName("search-bar-text")
+                .item(0)
+                .getTextContent();
+
+        rv.setBackButtonURL(backButtonURL);
+        rv.setBackButtonText(backButtonText);
+        rv.setSearchBarText(searchBarText);
+
 
         SolrConfig videoConfig = getSolrConfig(instance, "solr-connection");
         SolrConfig blockConfig = getSolrConfig(instance, "solr-block-connection");

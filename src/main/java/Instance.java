@@ -30,6 +30,7 @@ public class Instance {
     File stlDir;
 
     private String name, username;
+    private String backButtonURL, backButtonText, searchBarText;
 
     Instance() throws MalformedURLException {
         renderer = Renderer.getInstance();
@@ -37,12 +38,12 @@ public class Instance {
     }
 
     public String home(){
-        return renderer.home();
+        return renderer.home(this);
     }
 
     public String search(String searchText) throws IOException, SolrServerException {
         SearchResult result = searcher.search(searchText);
-        return renderer.search(result);
+        return renderer.search(this,result);
     }
 
     private void initializeSQL(){}
@@ -61,19 +62,19 @@ public class Instance {
     }
 
 
-    String getName(){
+    public String getName(){
         return name;
     }
 
-    void setName(String name){
+    public void setName(String name){
         this.name = name;
     }
 
-    String getUsername(){
+    public String getUsername(){
         return username;
     }
 
-    void setUsername(String username){
+    public void setUsername(String username){
         this.username = username;
     }
 
@@ -108,5 +109,29 @@ public class Instance {
 
     URL getSolrBlockURL(){
         return solrBlockURL;
+    }
+
+    public String getBackButtonURL() {
+        return backButtonURL;
+    }
+
+    public void setBackButtonURL(String backButtonURL) {
+        this.backButtonURL = backButtonURL;
+    }
+
+    public String getBackButtonText() {
+        return backButtonText;
+    }
+
+    public void setBackButtonText(String backButtonText) {
+        this.backButtonText = backButtonText;
+    }
+
+    public String getSearchBarText() {
+        return searchBarText;
+    }
+
+    public void setSearchBarText(String searchBarText) {
+        this.searchBarText = searchBarText;
     }
 }

@@ -1,0 +1,15 @@
+<instance name="JustEnough" username="just-enough">
+    <solr-connection>
+            <username>admin</username>
+            <password>97obw!nmusk&gt;</password>
+            <address>solr.daemon.life</address>
+            <core>videos</core>
+    </solr-connection>
+
+    <solr-block-connection>
+        <username>admin</username>
+        <password>97obw!nmusk></password>
+        <address>solr.daemon.life</address>
+        <core>video_blocks</core>
+    </solr-block-connection>
+</instance>

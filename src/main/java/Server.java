@@ -18,16 +18,13 @@ public class Server {
     Map<String, Instance> instanceMap;
 
     @RequestMapping("/{siteName}")
-    String home(@PathVariable("siteName") String siteName) {
-        return instanceMap.get(siteName).home();
+    String home(@PathVariable("siteName") String siteName, @RequestParam("terms") String terms) throws IOException, SolrServerException {
+        if(terms != null){
+            return instanceMap.get(siteName).search(terms);
+        } else {
+            return instanceMap.get(siteName).home();
+        }
     }
-
-    @RequestMapping("/{siteName}/search/{terms}")
-    String search(@PathVariable("siteName") String siteName,
-                  @PathVariable("terms") String terms) throws IOException, SolrServerException {
-        return instanceMap.get(siteName).search(terms);
-    }
-
 
     @PostConstruct
     private void init(){

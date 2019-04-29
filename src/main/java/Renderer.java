@@ -6,6 +6,8 @@ import freemarker.template.TemplateExceptionHandler;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Renderer extends Configuration {
 
@@ -31,11 +33,11 @@ public class Renderer extends Configuration {
         setTemplateExceptionHandler(TemplateExceptionHandler.HTML_DEBUG_HANDLER);
     }
 
-    public String home() {
+    private String site(Map<String, Object> root){
         try {
             Template template = getTemplate("home.ftl");
             StringWriter out = new StringWriter();
-            template.process(this, out);
+            template.process(root, out);
             return out.toString();
         }  catch (IOException e) {
             e.printStackTrace();
@@ -46,7 +48,18 @@ public class Renderer extends Configuration {
         }
     }
 
-    public String search(SearchResult result) {
-        return "<html></html>";
+    public String home(Instance instance) {
+        Map<String, Object> root = new HashMap<>();
+        root.put("instance", instance);
+        root.put("hasResults", false);
+        return site(root) ;
+    }
+
+    public String search(Instance instance, SearchResult result) {
+        Map<String, Object> root = new HashMap<>();
+        root.put("instance", instance);
+        root.put("hasResults", true);
+        root.put("videos", result.getVideos());
+        return site(root);
     }
 }

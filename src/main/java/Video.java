@@ -81,4 +81,16 @@ public class Video {
     public URL getUrl(){
         return url;
     }
+
+    public String getThumbnail(){
+        return thumbnail;
+    }
+
+    public String getId(){
+        return id;
+    }
+
+    public String getTitle(){
+        return title;
+    }
 }

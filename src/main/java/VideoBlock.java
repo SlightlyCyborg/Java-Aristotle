@@ -18,6 +18,26 @@ public class VideoBlock {
             millis = Integer.parseInt(hourMinSecMillis[3]);
         }
 
+        public void setForYTURL(){
+
+        }
+
+        public String getForYTURL(){
+            return String.format("%dh%dm$ds", hour, minute, second);
+        }
+
+        public void setForJSPlayer(){}
+
+        public String getForJSPlayer(){
+            return String.format("%d", hour*60*60 + minute*60 + second);
+        }
+
+        public void setForDisplay(){}
+
+        public String getForDisplay(){
+            return String.format("%01d:%02d:%02d", hour, minute, second);
+        }
+
         @Override
         public String toString(){
             return  String.format("%03d:%02d:%02d,%03d",
@@ -52,4 +72,19 @@ public class VideoBlock {
         return time.split(" --> ");
     }
 
+    public String getWords(){
+        return words;
+    }
+
+    public String getId(){
+        return id;
+    }
+
+    public BlockTime getStartTime(){
+        return startTime;
+    }
+
+    public BlockTime getStopTime(){
+        return stopTime;
+    }
 }

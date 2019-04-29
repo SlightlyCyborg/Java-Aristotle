@@ -1,0 +1,22 @@
+<instance name="Andrew Yang" username="andrew-yang">
+
+    <youtube-channel>JordanPetersonVideos</youtube-channel>
+    <search-bar-text>search Andrew Yang's appearances</search-bar-text>
+    <back-button-url>https://yang2020.com</back-button-url>
+    <back-button-text>back to yang2020.com</back-button-text>
+
+    <solr-connection>
+        <username>admin</username>
+        <password>97obw!nmusk&gt;</password>
+        <address>solr.daemon.life</address>
+        <core>yang</core>
+    </solr-connection>
+
+    <solr-block-connection>
+        <username>admin</username>
+        <password>97obw!nmusk></password>
+        <address>solr.daemon.life</address>
+        <core>yang-video-blocks</core>
+    </solr-block-connection>
+
+</instance>
