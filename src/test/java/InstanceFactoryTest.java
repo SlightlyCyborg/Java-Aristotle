@@ -20,6 +20,8 @@ class InstanceFactoryTest {
             assertNotNull(jordanBPeterson);
             assertEquals("Jordan Peterson", jordanBPeterson.getName());
             assertEquals("jordan-peterson", jordanBPeterson.getUsername());
+            assertEquals("http://solr.daemon.life:8983/solr/videos", jordanBPeterson.getSolrVideoURL().toString());
+            assertEquals("http://solr.daemon.life:8983/solr/video_blocks", jordanBPeterson.getSolrBlockURL().toString());
         } catch(Exception e) {
             fail(e.getMessage());
         }
@@ -32,13 +34,13 @@ class InstanceFactoryTest {
         try{
             List<Instance> factoryResult = InstanceFactory.fromDirectory(dir);
             assertEquals(2, factoryResult.size());
-            boolean foundJBP=false, foundEmpty=false;
+            boolean foundJBP=false, justEnough=false;
             for(Iterator<Instance> it = factoryResult.iterator(); it.hasNext(); ){
                 Instance possibleMatch = it.next();
                 if(possibleMatch.getName().equals("Jordan Peterson"))foundJBP = true;
-                if(possibleMatch.getName().equals("Empty")) foundEmpty = true;
+                if(possibleMatch.getName().equals("JustEnough")) justEnough = true;
             }
-            assertTrue(foundJBP&&foundEmpty);
+            assertTrue(foundJBP&&justEnough);
         } catch (Exception e){
             fail(e.getMessage());
         }

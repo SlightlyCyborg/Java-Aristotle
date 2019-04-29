@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ServiceConfigurationError;
 
 public class InstanceFactory {
     public static List<Instance> fromDirectory(File dir){
@@ -25,10 +26,45 @@ public class InstanceFactory {
       for(int i=0; i<xmls.length; i++){
           try {
               instances.add(fromFile(xmls[i]));
-          } catch(Exception e){}
+          } catch(Exception e){
+              System.out.println(e.getClass());
+          }
       }
 
       return instances;
+    }
+
+    private static SolrConfig parseSolrConnection(Node connection){
+        SolrConfig cfg = new SolrConfig();
+
+        NodeList attrs = connection.getChildNodes();
+        for(int i=0; i<attrs.getLength(); i++){
+            Node n = attrs.item(i);
+            String name = n.getNodeName();
+            switch(name){
+                case "core":
+                    cfg.setCore(n.getTextContent());
+                    break;
+                case "address":
+                    cfg.setHost(n.getTextContent());
+                    break;
+                default:
+                    break;
+            }
+        }
+        return cfg;
+    }
+
+    public static SolrConfig getSolrConfig(Element instance, String configTagName) {
+        NodeList nodes = instance.getElementsByTagName(configTagName);
+        Node connection = nodes.item(0);
+        if (connection == null){
+            throw new IllegalStateException(
+                    String.format("config for `%s` doesn't have solr configuration tag named `%s`",
+                    instance.getAttribute("username"),
+                    configTagName));
+        }
+        return parseSolrConnection(connection);
     }
 
     public static Instance fromFile(File xml) throws IOException, SAXException, ParserConfigurationException {
@@ -43,6 +79,11 @@ public class InstanceFactory {
         rv.setName(instance.getAttribute("name"));
         rv.setUsername(instance.getAttribute("username"));
 
+
+        SolrConfig videoConfig = getSolrConfig(instance, "solr-connection");
+        SolrConfig blockConfig = getSolrConfig(instance, "solr-block-connection");
+
+        rv.initializeSolr(videoConfig, blockConfig);
         return rv;
     }
 }

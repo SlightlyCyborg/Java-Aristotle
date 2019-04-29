@@ -1,3 +1,7 @@
+import org.apache.solr.client.solrj.SolrClient;
+import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.impl.HttpSolrClient;
+import org.apache.solr.client.solrj.response.QueryResponse;
 import org.junit.jupiter.api.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -15,15 +19,15 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class SearcherTest {
+class SearchAndIndexTest {
 
     @Test
     void SolrConfigGetURL(){
-        Searcher.SolrConfig config = new Searcher.SolrConfig();
-        config.ssl = true;
-        config.host = "localhost";
-        config.port = 2020;
-        config.core = "jordan";
+        SolrConfig config = new SolrConfig();
+        config.setSSL(true);
+        config.setHost("localhost");
+        config.setPort(2020);
+        config.setCore("jordan");
 
         try {
             URL withSSL = config.getURL();
@@ -40,26 +44,29 @@ class SearcherTest {
     }
 
     @Test
-    void search() throws MalformedURLException {
-        Searcher.SolrConfig videos = new Searcher.SolrConfig();
-        videos.ssl = false;
-        videos.host = "localhost";
-        videos.port = 2020;
-        videos.core = "jordan";
+    void search() throws IOException, SolrServerException {
 
-        Searcher.SolrConfig blocks = new Searcher.SolrConfig(videos);
-        blocks.core = "jordan-blocks";
+        SolrClient videoConnection = new HttpSolrClient.Builder("http://localhost:8983/solr/yang").build();
+        SolrClient blockConnection = new HttpSolrClient.Builder("http://localhost:8983/solr/yang-video-blocks").build();
 
-        Searcher searcher = new Searcher(videos, blocks);
+        Searcher searcher = new Searcher(videoConnection, blockConnection);
 
-        String query = "clean your room";
+        SearchResult result = searcher.search("freedom dividend");
+        List<Video> videos = result.getVideos();
 
-        SearchResult result = searcher.search(query);
-
-        List<Video> searchVideos = result.getVideos();
-
-        assertEquals(10, searchVideos.size());
-
+        boolean atLeastSomeVideosHadBlocks = false;
+        for(Video v: videos){
+            assertNotNull(v.id);
+            assertEquals(v.id.length(), 11);
+            if(v.blocks.size() > 0) {
+                atLeastSomeVideosHadBlocks = true;
+                assertTrue(v.blocks.get(0).words.length() > 0);
+                assertTrue(v.blocks.get(0).id.length() > 0);
+                assertNotNull(v.blocks.get(0).startTime);
+                assertNotNull(v.blocks.get(0).stopTime);
+            }
+            assertTrue(atLeastSomeVideosHadBlocks);
+        }
     }
 
     @Test

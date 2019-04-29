@@ -6,60 +6,20 @@ import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 
+import javax.management.Query;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
-import java.util.List;
 
 public class Searcher {
-    public static class SolrConfig{
-        boolean ssl = false;
-        String username;
-        String password;
-        String host;
-        String core;
-        int port;
+    private SolrClient videoConnection, blockConnection;
 
-        SolrConfig(){}
 
-        SolrConfig(SolrConfig toBeCopied){
-            ssl = toBeCopied.ssl;
-            username = toBeCopied.username;
-            password = toBeCopied.password;
-            host = toBeCopied.host;
-            core = toBeCopied.core;
-            port = toBeCopied.port;
-        }
 
-        URL getURL() throws MalformedURLException {
-            String protocol;
-            if(ssl){
-                protocol = "https";
-            } else {
-                protocol = "http";
-            }
-
-            URL rv = new URL(
-                    protocol,
-                    host,
-                    port,
-                    "/solr/"+core
-            );
-
-            return rv;
-        }
-    }
-
-    SolrClient videoConnection, blockConnection;
-    SolrConfig videoConfig, blockConfig;
-
-    Searcher(SolrConfig videoConfig, SolrConfig blockConfig) throws MalformedURLException {
-        this.videoConfig = videoConfig;
-        this.blockConfig = blockConfig;
-
-        videoConnection = new HttpSolrClient.Builder(videoConfig.getURL().toString()).build();
-        blockConnection = new HttpSolrClient.Builder(blockConfig.getURL().toString()).build();
+    Searcher(SolrClient videoConnection, SolrClient blockConnection){
+        this.videoConnection = videoConnection;
+        this.blockConnection = blockConnection;
     }
 
     SearchResult search(String searchText) throws IOException, SolrServerException {
@@ -68,9 +28,15 @@ public class Searcher {
         QueryResponse videoResponse = searchVideos(searchText); //make a network request
         SolrDocumentList videoDocs = videoResponse.getResults();
         for(Iterator<SolrDocument> it = videoDocs.iterator(); it.hasNext();){
-            Video toAdd = new Video(it.next());
-            searchBlocks(toAdd, searchText); //makes a network request
-            rv.addVideo(toAdd);
+            Video videoToAdd = new Video(it.next());
+            QueryResponse blockResponse = searchBlocks(videoToAdd, searchText); //makes a network request
+            SolrDocumentList blockDocs = blockResponse.getResults();
+
+            for(Iterator<SolrDocument> blockIt = blockDocs.iterator(); blockIt.hasNext();){
+                VideoBlock block = new VideoBlock(blockIt.next());
+                videoToAdd.addBlock(block);
+            }
+            rv.addVideo(videoToAdd);
         }
 
         //code is bad because it makes videoDocs.size()+1 number of network requests
@@ -84,9 +50,6 @@ public class Searcher {
         return videoConnection.query(query);
     }
 
-    void searchBlocks(Video context, String searchText){
-
-    }
 
     static String improveQ(String q){
         StringBuilder rv = new StringBuilder();
@@ -102,6 +65,29 @@ public class Searcher {
         rv.append(q);
         rv.append("\"~10000^5");
 
+        return rv.toString();
+    }
+
+    QueryResponse searchBlocks(Video context, String searchText) throws IOException, SolrServerException {
+        SolrQuery blockQuery = new SolrQuery();
+        String q = makeBlockQ(context, searchText);
+        blockQuery.set("q", q);
+        blockQuery.set("sort", "start_time_s asc");
+        blockQuery.set("h", "on");
+        blockQuery.set("hl", "on");
+        blockQuery.set("hl-fl", "viewable_words_t");
+
+        return blockConnection.query(blockQuery);
+    }
+
+    String makeBlockQ(Video context, String searchTerm){
+        StringBuilder rv = new StringBuilder();
+        rv.append("captions_t:\"");
+        rv.append(searchTerm);
+        rv.append("\"");
+        rv.append(" AND video_id_s:\"");
+        rv.append(context.getID());
+        rv.append("\"");
         return rv.toString();
     }
 }
