@@ -124,11 +124,12 @@ public class InstanceFactory {
     }
 
     private static List<InstanceConfig> getInstanceConfigsFromConnection() {
-        InstanceConfig.InstanceConfigDBExtractor extractor = new InstanceConfig.InstanceConfigDBExtractor();
-        String sql = "";
+        //InstanceConfig.InstanceConfigDBExtractor extractor = new InstanceConfig.InstanceConfigDBExtractor();
+        //String sql = "";
 
-        DBConnection.makeQuery(extractor, sql);
-        return extractor.instances;
+        //DBConnection.makeQuery(extractor, sql);
+        //return extractor.instances;
+        return null;
     }
 
 }

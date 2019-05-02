@@ -7,6 +7,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Date;
@@ -32,10 +34,7 @@ public class Instance {
     private String name, username;
     private String backButtonURL, backButtonText, searchBarText;
 
-    InstanceConfig config;
-
     Instance() throws MalformedURLException {
-        config = new InstanceConfig();
         renderer = Renderer.getInstance();
         initializeSQL();
     }
@@ -56,9 +55,6 @@ public class Instance {
         solrVideoURL = videoConfig.getURL();
         solrBlockURL = blockConfig.getURL();
 
-        config.setVideoConfig(videoConfig);
-        config.setBlockConfig(blockConfig);
-
         SolrClient videoConnection = new HttpSolrClient.Builder(videoConfig.getURL().toString()).build();
         SolrClient blockConnection = new HttpSolrClient.Builder(blockConfig.getURL().toString()).build();
 
@@ -66,7 +62,6 @@ public class Instance {
         searcher = new Searcher(videoConnection, blockConnection);
         indexer = new Indexer(videoConnection, blockConnection);
     }
-
 
     public String getName(){
         return name;
@@ -120,29 +115,51 @@ public class Instance {
         return solrBlockURL;
     }
 
-    public String getBackButtonURL() {
-        return config.getBackButtonURL();
+    public String getBackButtonURL() { return backButtonURL; }
+
+    public void setBackButtonURL(String backButtonURL) { this.backButtonURL = backButtonURL;  }
+
+    public String getBackButtonText() { return backButtonText; }
+
+    public void setBackButtonText(String backButtonText) { this.backButtonText = backButtonText; }
+
+    public String getSearchBarText() { return searchBarText; }
+
+    public void setSearchBarText(String searchBarText) { this.searchBarText=searchBarText; }
+
+    private void setBlockConfig(SolrConfig fromID) {
+
     }
 
-    public void setBackButtonURL(String backButtonURL) {
-        config.setBackButtonURL(backButtonURL);
-    }
-
-    public String getBackButtonText() {
-        return config.getBackButtonText();
-    }
-
-    public void setBackButtonText(String backButtonText) {
-        config.setBackButtonText(backButtonText);
-    }
-
-    public String getSearchBarText() {
-        return config.getSearchBarText();
-    }
-
-    public void setSearchBarText(String searchBarText) {
-        config.setSearchBarText(searchBarText);
+    private void setVideoConfig(SolrConfig fromID) {
     }
 
 
+
+    static class InstanceDBExtractor extends SimpleDBResultExtractor<Instance>{
+
+        @Override
+        public void extractInstancesFromDBResult(ResultSet rs) {
+            try {
+                while (rs.next()) {
+                    Instance config = new Instance();
+                    config.setName(rs.getString("name"));
+                    config.setUsername(rs.getString("username"));
+                    config.setBackButtonText(rs.getString("back-button-text"));
+                    config.setBackButtonURL(rs.getString("back-button-url"));
+                    config.setSearchBarText(rs.getString("set-search-bar-text"));
+                    int videoConfigId = rs.getInt("videoSolrConfigID");
+                    int blockConfigId = rs.getInt("blockSolrConfigID");
+                    config.setVideoConfig(SolrConfig.fromID(videoConfigId));
+                    config.setBlockConfig(SolrConfig.fromID(blockConfigId));
+
+                    instances.add(config);
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }

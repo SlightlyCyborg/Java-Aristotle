@@ -1,3 +1,4 @@
+import java.net.MalformedURLException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -12,41 +13,7 @@ public class InstanceConfig {
 
 
 
-    static class InstanceConfigDBExtractor implements DBResultExtractor{
 
-        List<InstanceConfig> instances;
-
-        public InstanceConfigDBExtractor(){
-            instances = new ArrayList<>();
-        }
-
-        @Override
-        public void extractInstancesFromDBResult(ResultSet rs) {
-            try {
-                while (rs.next()) {
-                    InstanceConfig config = new InstanceConfig();
-                    config.setName(rs.getString("name"));
-                    config.setUsername(rs.getString("username"));
-                    config.setBackButtonText(rs.getString("back-button-text"));
-                    config.setBackButtonURL(rs.getString("back-button-url"));
-                    config.setSearchBarText(rs.getString("set-search-bar-text"));
-                    int videoConfigId = rs.getInt("videoSolrConfigID");
-                    int blockConfigId = rs.getInt("blockSolrConfigID");
-                    config.setVideoConfig(SolrConfig.fromID(videoConfigId));
-                    config.setBlockConfig(SolrConfig.fromID(blockConfigId));
-
-                    instances.add(config);
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-
-        @Override
-        public List getInstances() {
-            return instances;
-        }
-    }
 
     private String toSQLValues(){
         String values = String.format("%s, %s, %s, %s, %s",

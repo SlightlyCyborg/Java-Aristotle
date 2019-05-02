@@ -17,29 +17,18 @@ public class DBConnectionTest {
         }
     }
 
-    public static class DBTestObjectExtractor implements DBResultExtractor<DBTestObject>{
-
-        List<DBTestObject> testObjects;
-
-        public DBTestObjectExtractor() {
-            testObjects = new ArrayList<DBTestObject>();
-        }
+    public static class DBTestObjectExtractor extends SimpleDBResultExtractor<DBTestObject>{
 
         @Override
         public void extractInstancesFromDBResult(ResultSet rs) {
             //TODO increase speed of this by using indices into the rs instead of column names
             try {
                 while (rs.next()) {
-                    testObjects.add(new DBTestObject(rs.getString("id")));
+                    instances.add(new DBTestObject(rs.getString("id")));
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
             }
-        }
-
-        @Override
-        public List<DBTestObject> getInstances() {
-            return testObjects;
         }
     }
 

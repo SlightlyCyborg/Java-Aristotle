@@ -7,13 +7,9 @@ import java.util.List;
 
 public class SolrConfig {
 
-    public static class SolrConfigExtractor implements DBResultExtractor<SolrConfig>{
-
-        List<SolrConfig> configs;
-
+    public static class SolrConfigExtractor extends SimpleDBResultExtractor<SolrConfig>{
         @Override
         public void extractInstancesFromDBResult(ResultSet rs) throws SQLException {
-            configs = new ArrayList<>();
             while(rs.next()){
                 SolrConfig config = new SolrConfig();
                 config.setHost(rs.getString("host"));
@@ -21,13 +17,8 @@ public class SolrConfig {
                 config.setPort(rs.getInt("port"));
                 config.setSSL(rs.getBoolean("ssl"));
                 config.setId(rs.getInt("id"));
-                configs.add(config);
+                instances.add(config);
             }
-        }
-
-        @Override
-        public List<SolrConfig> getInstances() {
-            return configs;
         }
     }
 
