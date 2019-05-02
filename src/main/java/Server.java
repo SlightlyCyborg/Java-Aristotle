@@ -36,7 +36,7 @@ public class Server {
 
     @PostConstruct
     private void init(){
-        List<Instance> instances = InstanceFactory.fromDirectory(new File("instances"));
+        List<Instance> instances = Instance.fromDirectory(new File("instances"));
         instanceMap = new HashMap<>();
         for(Instance instance: instances){
             instanceMap.put(instance.getUsername(), instance);

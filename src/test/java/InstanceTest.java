@@ -15,13 +15,13 @@ class InstanceTest {
     @Disabled("implementation not complete")
     @Test void saveAndLoadInstanceFromDB() throws ParserConfigurationException, SAXException, IOException {
         File jbpXML = new File("test_data/Instance/saveAndLoad.xml");
-        Instance saveAndLoad = InstanceFactory.fromFile(jbpXML);
+        Instance saveAndLoad = Instance.fromFile(jbpXML);
         try {
-            List<Instance> activeInstances = InstanceFactory.fromDB();
+            List<Instance> activeInstances = Instance.fromDB();
             assertFalse(instanceExistsWithUsername(activeInstances, saveAndLoad.getUsername()));
 
             saveAndLoad.save();
-            activeInstances = InstanceFactory.fromDB();
+            activeInstances = Instance.fromDB();
             assertTrue(instanceExistsWithUsername(activeInstances, saveAndLoad.getUsername()));
 
 
@@ -52,7 +52,7 @@ class InstanceTest {
         File jbpXML = new File("test_data/InstanceFactory/jordanBPeterson.xml");
 
         try {
-            Instance jordanBPeterson = InstanceFactory.fromFile(jbpXML);
+            Instance jordanBPeterson = Instance.fromFile(jbpXML);
             assertNotNull(jordanBPeterson);
             assertEquals("Jordan Peterson", jordanBPeterson.getName());
             assertEquals("jordan-peterson", jordanBPeterson.getUsername());
@@ -68,7 +68,7 @@ class InstanceTest {
         File dir = new File("test_data/InstanceFactory");
 
         try{
-            List<Instance> factoryResult = InstanceFactory.fromDirectory(dir);
+            List<Instance> factoryResult = Instance.fromDirectory(dir);
             assertEquals(2, factoryResult.size());
             boolean foundJBP=false, justEnough=false;
             for(Iterator<Instance> it = factoryResult.iterator(); it.hasNext(); ){
