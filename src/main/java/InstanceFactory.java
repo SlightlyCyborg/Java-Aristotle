@@ -9,6 +9,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceConfigurationError;
@@ -27,7 +28,7 @@ public class InstanceFactory {
           try {
               instances.add(fromFile(xmls[i]));
           } catch(Exception e){
-              System.out.println(e.getClass());
+              System.err.println("Exception caught while making an instance from directory");
           }
       }
 
@@ -104,4 +105,30 @@ public class InstanceFactory {
         rv.initializeSolr(videoConfig, blockConfig);
         return rv;
     }
+
+    public static List<Instance> fromDB() throws MalformedURLException {
+        ArrayList<Instance> rv = new ArrayList<Instance>();
+
+        List<InstanceConfig> configs = getInstanceConfigsFromConnection();
+        for(InstanceConfig config: configs){
+            Instance instance = fromConfig(config);
+            rv.add(instance);
+        }
+
+        return rv;
+    }
+
+    private static Instance fromConfig(InstanceConfig config) throws MalformedURLException {
+        Instance rv = new Instance();
+        return rv;
+    }
+
+    private static List<InstanceConfig> getInstanceConfigsFromConnection() {
+        InstanceConfig.InstanceConfigDBExtractor extractor = new InstanceConfig.InstanceConfigDBExtractor();
+        String sql = "";
+
+        DBConnection.makeQuery(extractor, sql);
+        return extractor.instances;
+    }
+
 }

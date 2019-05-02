@@ -1,14 +1,48 @@
 import org.junit.jupiter.api.Test;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class InstanceFactoryTest {
+class InstanceTest {
+
+    @Test void saveAndLoadInstanceFromDB() throws ParserConfigurationException, SAXException, IOException {
+        File jbpXML = new File("test_data/Instance/saveAndLoad.xml");
+        Instance saveAndLoad = InstanceFactory.fromFile(jbpXML);
+        try {
+            List<Instance> activeInstances = InstanceFactory.fromDB();
+            assertFalse(instanceExistsWithID(activeInstances, saveAndLoad.getUsername()));
+
+            saveAndLoad.save();
+            activeInstances = InstanceFactory.fromDB();
+            assertTrue(instanceExistsWithID(activeInstances, saveAndLoad.getUsername()));
+
+
+
+        } catch(Exception e) {
+            fail(e.getMessage());
+        } finally {
+            DBConnection.makeUpdate(String.format("delete from \"instances\" where username=%s",
+                    saveAndLoad.getUsername()));
+        }
+
+    }
+
+    private boolean instanceExistsWithID(List<Instance> instances, String id){
+        boolean exists = false;
+        for(Instance instance: instances) {
+            if (instance.getUsername() == id){
+                exists = true;
+            }
+        }
+
+        return exists;
+    }
 
     @Test
     void fromFile(){

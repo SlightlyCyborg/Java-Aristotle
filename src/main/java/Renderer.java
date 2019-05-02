@@ -6,7 +6,9 @@ import freemarker.template.TemplateExceptionHandler;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Renderer extends Configuration {
@@ -61,5 +63,14 @@ public class Renderer extends Configuration {
         root.put("hasResults", true);
         root.put("videos", result.getVideos());
         return site(root);
+    }
+
+    public String admin(Collection<Instance> instances) throws IOException, TemplateException {
+        Map<String, Object> root = new HashMap<>();
+        root.put("instances", instances);
+        Template template = getTemplate("admin.ftl");
+        StringWriter out = new StringWriter();
+        template.process(root, out);
+        return out.toString();
     }
 }

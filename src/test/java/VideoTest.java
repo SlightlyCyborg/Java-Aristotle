@@ -13,6 +13,6 @@ public class VideoTest {
         assertEquals(vid.id, "oVvPfq0MoaQ");
         assertEquals(vid.blocks.get(0).words,"good morning Hank it's Tuesday your book");
         assertEquals(vid.blocks.get(111).words, "up and Hank I will<font color=\"#CCCCCC\"> see you on Friday</font>");
-        assertEquals(vid.blocks.get(111).id, 112);
+        assertEquals(vid.blocks.get(111).id, "112");
     }
 }

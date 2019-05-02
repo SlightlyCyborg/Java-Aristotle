@@ -1,3 +1,4 @@
+import freemarker.template.TemplateException;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.springframework.boot.*;
 import org.springframework.boot.autoconfigure.*;
@@ -9,6 +10,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 
 @RestController
@@ -16,14 +18,20 @@ import java.util.Map;
 public class Server {
 
     Map<String, Instance> instanceMap;
+    Renderer renderer;
 
     @RequestMapping("/{siteName}")
-    String home(@PathVariable("siteName") String siteName, @RequestParam("terms") String terms) throws IOException, SolrServerException {
-        if(terms != null){
-            return instanceMap.get(siteName).search(terms);
+    String home(@PathVariable("siteName") String siteName, @RequestParam("terms") Optional<String> terms) throws IOException, SolrServerException {
+        if(terms.isPresent()){
+            return instanceMap.get(siteName).search(terms.get());
         } else {
             return instanceMap.get(siteName).home();
         }
+    }
+
+    @GetMapping("/admin")
+    String admin() throws IOException, TemplateException {
+        return renderer.admin(instanceMap.values());
     }
 
     @PostConstruct
@@ -33,6 +41,7 @@ public class Server {
         for(Instance instance: instances){
             instanceMap.put(instance.getUsername(), instance);
         }
+        renderer = Renderer.getInstance();
     }
 
 

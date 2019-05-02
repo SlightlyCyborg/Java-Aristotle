@@ -32,7 +32,10 @@ public class Instance {
     private String name, username;
     private String backButtonURL, backButtonText, searchBarText;
 
+    InstanceConfig config;
+
     Instance() throws MalformedURLException {
+        config = new InstanceConfig();
         renderer = Renderer.getInstance();
         initializeSQL();
     }
@@ -52,6 +55,9 @@ public class Instance {
 
         solrVideoURL = videoConfig.getURL();
         solrBlockURL = blockConfig.getURL();
+
+        config.setVideoConfig(videoConfig);
+        config.setBlockConfig(blockConfig);
 
         SolrClient videoConnection = new HttpSolrClient.Builder(videoConfig.getURL().toString()).build();
         SolrClient blockConnection = new HttpSolrClient.Builder(blockConfig.getURL().toString()).build();
@@ -99,6 +105,9 @@ public class Instance {
         }
     }
 
+    public void save(){
+    }
+
     private OffsetDateTime getLastIndexedVideoFromSource(String sourceId) {
         return OffsetDateTime.now();
     }
@@ -112,26 +121,28 @@ public class Instance {
     }
 
     public String getBackButtonURL() {
-        return backButtonURL;
+        return config.getBackButtonURL();
     }
 
     public void setBackButtonURL(String backButtonURL) {
-        this.backButtonURL = backButtonURL;
+        config.setBackButtonURL(backButtonURL);
     }
 
     public String getBackButtonText() {
-        return backButtonText;
+        return config.getBackButtonText();
     }
 
     public void setBackButtonText(String backButtonText) {
-        this.backButtonText = backButtonText;
+        config.setBackButtonText(backButtonText);
     }
 
     public String getSearchBarText() {
-        return searchBarText;
+        return config.getSearchBarText();
     }
 
     public void setSearchBarText(String searchBarText) {
-        this.searchBarText = searchBarText;
+        config.setSearchBarText(searchBarText);
     }
+
+
 }
