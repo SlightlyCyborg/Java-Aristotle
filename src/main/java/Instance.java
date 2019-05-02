@@ -3,8 +3,6 @@ import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import subtitleDownloader.Runner;
 
@@ -19,7 +17,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -67,39 +64,6 @@ public class Instance {
       return instances;
     }
 
-    private static SolrConfig parseSolrConnection(Node connection){
-        SolrConfig cfg = new SolrConfig();
-
-        NodeList attrs = connection.getChildNodes();
-        for(int i=0; i<attrs.getLength(); i++){
-            Node n = attrs.item(i);
-            String name = n.getNodeName();
-            switch(name){
-                case "core":
-                    cfg.setCore(n.getTextContent());
-                    break;
-                case "address":
-                    cfg.setHost(n.getTextContent());
-                    break;
-                default:
-                    break;
-            }
-        }
-        return cfg;
-    }
-
-    public static SolrConfig getSolrConfig(Element instance, String configTagName) {
-        NodeList nodes = instance.getElementsByTagName(configTagName);
-        Node connection = nodes.item(0);
-        if (connection == null){
-            throw new IllegalStateException(
-                    String.format("config for `%s` doesn't have solr configuration tag named `%s`",
-                    instance.getAttribute("username"),
-                    configTagName));
-        }
-        return parseSolrConnection(connection);
-    }
-
     public static Instance fromFile(File xml) throws IOException, SAXException, ParserConfigurationException {
         Instance rv = new Instance();
 
@@ -131,8 +95,8 @@ public class Instance {
         rv.setSearchBarText(searchBarText);
 
 
-        SolrConfig videoConfig = getSolrConfig(instance, "solr-connection");
-        SolrConfig blockConfig = getSolrConfig(instance, "solr-block-connection");
+        SolrConfig videoConfig = SolrConfig.getSolrConfig(instance, "solr-connection");
+        SolrConfig blockConfig = SolrConfig.getSolrConfig(instance, "solr-block-connection");
 
         rv.initializeSolr(videoConfig, blockConfig);
         return rv;

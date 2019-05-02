@@ -1,3 +1,7 @@
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.ResultSet;
@@ -6,6 +10,39 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SolrConfig {
+
+    private static SolrConfig parseSolrConnectionFromDOMNode(Node connection){
+        SolrConfig cfg = new SolrConfig();
+
+        NodeList attrs = connection.getChildNodes();
+        for(int i=0; i<attrs.getLength(); i++){
+            Node n = attrs.item(i);
+            String name = n.getNodeName();
+            switch(name){
+                case "core":
+                    cfg.setCore(n.getTextContent());
+                    break;
+                case "address":
+                    cfg.setHost(n.getTextContent());
+                    break;
+                default:
+                    break;
+            }
+        }
+        return cfg;
+    }
+
+    public static SolrConfig getSolrConfig(Element instance, String configTagName) {
+        NodeList nodes = instance.getElementsByTagName(configTagName);
+        Node connection = nodes.item(0);
+        if (connection == null){
+            throw new IllegalStateException(
+                    String.format("config for `%s` doesn't have solr configuration tag named `%s`",
+                    instance.getAttribute("username"),
+                    configTagName));
+        }
+        return parseSolrConnectionFromDOMNode(connection);
+    }
 
     public static class SolrConfigExtractor extends SimpleDBResultExtractor<SolrConfig>{
         @Override
