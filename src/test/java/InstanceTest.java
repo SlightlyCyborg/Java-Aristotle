@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class InstanceTest {
 
-    @Disabled("implementation not complete")
     @Test void saveAndLoadInstanceFromDB() throws ParserConfigurationException, SAXException, IOException {
         File jbpXML = new File("test_data/Instance/saveAndLoad.xml");
         Instance saveAndLoad = Instance.fromFile(jbpXML);
@@ -29,7 +28,7 @@ class InstanceTest {
         } catch(Exception e) {
             fail(e.getMessage());
         } finally {
-            DBConnection.makeUpdate(String.format("delete from \"instances\" where username=%s",
+            DBConnection.makeUpdate(String.format("delete from \"instances\" where username='%s'",
                     saveAndLoad.getUsername()));
         }
 
@@ -38,7 +37,7 @@ class InstanceTest {
     private boolean instanceExistsWithUsername(List<Instance> instances, String username){
         boolean exists = false;
         for(Instance instance: instances) {
-            if (instance.getUsername() == username){
+            if (instance.getUsername().equals(username)){
                 exists = true;
             }
         }

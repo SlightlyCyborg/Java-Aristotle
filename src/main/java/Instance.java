@@ -38,6 +38,9 @@ public class Instance {
 
     private String name, username;
     private String backButtonURL, backButtonText, searchBarText;
+    private SolrConfig solrBlock;
+    private SolrConfig solrVideo;
+    private boolean active = true;
 
     Instance() throws MalformedURLException {
         renderer = Renderer.getInstance();
@@ -102,18 +105,17 @@ public class Instance {
         return rv;
     }
 
+    static String activeInstanceSQLStr;
+
     public static List<Instance> fromDB() throws MalformedURLException {
-        ArrayList<Instance> rv = new ArrayList<Instance>();
+        InstanceDBExtractor extractor = new InstanceDBExtractor();
 
-        /*
-        List<InstanceConfig> configs = getInstanceConfigsFromConnection();
-        for(InstanceConfig config: configs){
-            Instance instance = fromConfig(config);
-            rv.add(instance);
-        }
-        */
+        String sql = "SELECT * from instances where active=true";
 
-        return rv;
+        DBConnection.makeQuery(extractor, sql);
+        List<Instance> instances = extractor.getInstances();
+
+        return instances;
     }
 
     public String home(){
@@ -131,6 +133,10 @@ public class Instance {
 
         solrVideoURL = videoConfig.getURL();
         solrBlockURL = blockConfig.getURL();
+
+        //Needed for saving
+        setVideoConfig(videoConfig);
+        setBlockConfig(blockConfig);
 
         SolrClient videoConnection = new HttpSolrClient.Builder(videoConfig.getURL().toString()).build();
         SolrClient blockConnection = new HttpSolrClient.Builder(blockConfig.getURL().toString()).build();
@@ -201,30 +207,43 @@ public class Instance {
 
     public void setSearchBarText(String searchBarText) { this.searchBarText=searchBarText; }
 
-    private void setBlockConfig(SolrConfig fromID) {
-
+    private void setBlockConfig(SolrConfig config) {
+        solrBlock = config;
     }
 
-    private void setVideoConfig(SolrConfig fromID) {
+    private void setVideoConfig(SolrConfig config) {
+        solrVideo = config;
     }
 
     private String toSQLValues(){
-        String values = String.format("%s, %s, %s, %s, %s",
-                username, name, backButtonURL, backButtonText, searchBarText);
+        String values = String.format("'%s', '%s', '%s', '%s', '%s', %d, %d, %b",
+                username, name, backButtonURL, backButtonText, searchBarText,
+                solrVideo.getId(), solrBlock.getId(), true);
         return values;
     }
 
     private String makeInsertionQuery(){
         StringBuilder sb = new StringBuilder();
         sb.append("insert into instances values (");
-        sb.append(toSQLValues());
+        sb.append("?, ?, ?, ?, ?, ?, ?, ?");
         sb.append(")");
 
         return sb.toString();
     }
 
     public int save(){
-        int numInserted = DBConnection.makeUpdate(makeInsertionQuery());
+        if(solrVideo == null || solrBlock == null){
+            throw new IllegalStateException("An instance without initialized solr configs cannot be saved");
+        }
+        if(!solrVideo.isAlreadyInDB()){
+            solrVideo.saveToDB();
+        }
+        if(!solrBlock.isAlreadyInDB()){
+            solrBlock.saveToDB();
+        }
+        int numInserted = DBConnection.makeUpdate(makeInsertionQuery(),
+                username, name, backButtonURL, backButtonText, searchBarText,
+                solrVideo.getId(), solrBlock.getId(), active);
         return numInserted;
     }
 
@@ -235,18 +254,20 @@ public class Instance {
         public void extractInstancesFromDBResult(ResultSet rs) {
             try {
                 while (rs.next()) {
-                    Instance config = new Instance();
-                    config.setName(rs.getString("name"));
-                    config.setUsername(rs.getString("username"));
-                    config.setBackButtonText(rs.getString("back-button-text"));
-                    config.setBackButtonURL(rs.getString("back-button-url"));
-                    config.setSearchBarText(rs.getString("set-search-bar-text"));
+                    Instance video = new Instance();
+                    video.setName(rs.getString("name"));
+                    video.setUsername(rs.getString("username"));
+                    video.setBackButtonText(rs.getString("backButtonText"));
+                    video.setBackButtonURL(rs.getString("backButtonURL"));
+                    video.setSearchBarText(rs.getString("searchBarText"));
                     int videoConfigId = rs.getInt("videoSolrConfigID");
                     int blockConfigId = rs.getInt("blockSolrConfigID");
-                    config.setVideoConfig(SolrConfig.fromID(videoConfigId));
-                    config.setBlockConfig(SolrConfig.fromID(blockConfigId));
+                    SolrConfig solrVideo = SolrConfig.fromID(videoConfigId);
+                    SolrConfig solrBlock = SolrConfig.fromID(blockConfigId);
 
-                    instances.add(config);
+                    video.initializeSolr(solrVideo, solrBlock);
+
+                    instances.add(video);
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
