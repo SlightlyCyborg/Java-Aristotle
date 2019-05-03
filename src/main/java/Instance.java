@@ -15,6 +15,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -143,7 +144,7 @@ public class Instance {
 
 
         searcher = new Searcher(videoConnection, blockConnection);
-        indexer = new Indexer(videoConnection, blockConnection);
+        indexer = new Indexer(username, videoConnection, blockConnection);
     }
 
     public String getName(){
@@ -170,8 +171,8 @@ public class Instance {
         urlsToIndex = new ArrayList<URL>();
         for(Iterator<VideoSource> it = videoSources.iterator(); it.hasNext();){
             VideoSource source = it.next();
-            OffsetDateTime lastIndexedDate = getLastIndexedVideoFromSource(source.getID());
-            List<Video> toAdd = source.getVideosPublishedSince(lastIndexedDate);
+            LocalDate lastIndexedDate = getLastIndexedVideoFromSource(source.getID());
+            List<Video> toAdd = source.getVideos(lastIndexedDate, LocalDate.now());
 
             addVideosToURLsToIndex(toAdd);
         }
@@ -183,8 +184,8 @@ public class Instance {
         }
     }
 
-    private OffsetDateTime getLastIndexedVideoFromSource(String sourceId) {
-        return OffsetDateTime.now();
+    private LocalDate getLastIndexedVideoFromSource(String sourceId) {
+        return LocalDate.now();
     }
 
     URL getSolrVideoURL()  {

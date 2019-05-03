@@ -10,11 +10,10 @@ import java.security.GeneralSecurityException;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-public class YouTubeChannelVideoSource extends VideoSource{
+public class YouTubeChannelVideoSource implements VideoSource{
 
     enum ID_Type{
         USERNAME,
@@ -57,17 +56,17 @@ public class YouTubeChannelVideoSource extends VideoSource{
     }
 
     @Override
-    public List<Video> getVideosPublishedSince(OffsetDateTime lastIndexedDateTime) {
+    public List<Video> getVideos(LocalDate earliest, LocalDate latest) {
 
         try {
             String uploadPlaylistID = findPlaylistForAllChannelUploads();
-            return findVideosInPlaylistSinceDate(uploadPlaylistID, lastIndexedDateTime);
+            return findVideosInPlaylist(uploadPlaylistID, earliest, latest);
         } catch(Exception e){}
         return null;
     }
 
-    private List<Video> findVideosInPlaylistSinceDate(String uploadPlaylistID,
-                                                      OffsetDateTime lastIndexedDateTime) throws IOException {
+    private List<Video> findVideosInPlaylist(String uploadPlaylistID,
+                                             LocalDate earliest, LocalDate latest) throws IOException {
         List<Video> rv = new ArrayList<Video>();
         String nextToken = "";
         boolean nextPageExists = true;
@@ -91,8 +90,9 @@ public class YouTubeChannelVideoSource extends VideoSource{
             for(Iterator<PlaylistItem> it = response.getItems().iterator(); it.hasNext();){
                 PlaylistItemContentDetails details = it.next().getContentDetails();
                 OffsetDateTime published = OffsetDateTime.parse(details.getVideoPublishedAt().toString());
+                LocalDate publishedDate= published.toLocalDate();
 
-                if(published.compareTo(lastIndexedDateTime) > 0) {
+                if(publishedDate.compareTo(earliest) > 0 && publishedDate.compareTo(latest) < 0) {
                     Video video = new Video(details.getVideoId());
                     rv.add(video);
                 }

@@ -15,4 +15,11 @@ public class VideoTest {
         assertEquals(vid.blocks.get(111).words, "up and Hank I will<font color=\"#CCCCCC\"> see you on Friday</font>");
         assertEquals(vid.blocks.get(111).id, "112");
     }
+
+    @Test
+    void getLastIndexed(){
+        String username = "last-indexed-test-user";
+        Video vid = Video.getLastIndexed(username);
+        assertEquals(vid.id, "get-last-indexed-test");
+    }
 }

@@ -4,6 +4,9 @@ import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrInputDocument;
 
 import java.io.IOException;
+import java.net.URL;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -12,9 +15,19 @@ public class Indexer {
 
     private SolrClient videoConnection, blockConnection;
 
-    Indexer(SolrClient videoConnection, SolrClient blockConnection){
+    private List<VideoSource> videoSources;
+
+    String instanceUsername;
+
+    Indexer(String instanceUsername, SolrClient videoConnection, SolrClient blockConnection){
+        this.instanceUsername = instanceUsername;
+        videoSources = new ArrayList<VideoSource>();
         this.videoConnection = videoConnection;
         this.blockConnection = blockConnection;
+    }
+
+    void addVideoSource(VideoSource source){
+        videoSources.add(source);
     }
 
     void index(List<Video> videos) throws IOException, SolrServerException {
@@ -57,5 +70,24 @@ public class Indexer {
 
             videoConnection.add(documentToIndex);
         }
+    }
+
+    public List<URL> getUrlsToIndex(){
+        LocalDate latestIsPresentDate = LocalDate.now();
+        return getUrlsToIndexAsOfDate(latestIsPresentDate);
+    }
+
+    public List<URL> getUrlsToIndexAsOfDate(LocalDate latest){
+        ArrayList<URL> urls = new ArrayList<>();
+
+        for(VideoSource source: videoSources){
+            Video lastIndexed = Video.getLastIndexed(instanceUsername);
+            List<Video> videos = source.getVideos(lastIndexed.indexedDate, latest);
+            for(Video video: videos){
+                urls.add(video.getUrl());
+            }
+        }
+
+        return urls;
     }
 }

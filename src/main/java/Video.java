@@ -7,20 +7,41 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.net.URL;
 import java.nio.file.Files;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
 public class Video {
 
+    static class VideoExtractor extends SimpleDBResultExtractor<Video>{
+
+        @Override
+        public void extractInstancesFromDBResult(ResultSet rs) throws SQLException {
+            while(rs.next()){
+                Video v = new Video(rs.getString("id"));
+                v.indexedDate = LocalDate.parse(rs.getString("date-indexed"));
+                v.lastUpdated = LocalDate.parse(rs.getString("last-updated"));
+                v.instanceUsername = rs.getString("instance-username");
+                instances.add(v);
+            }
+        }
+    }
+
     public URL url;
     String id;
     String title;
     String description;
     String channel;
+    String instanceUsername;
     String thumbnail;
     String captions;
     String uploaded;
+    LocalDate indexedDate;
+    LocalDate lastUpdated;
     List<VideoBlock> blocks;
     int likes;
     int views;
@@ -92,5 +113,20 @@ public class Video {
 
     public String getTitle(){
         return title;
+    }
+
+    private static String makeLastIndexedSQL(String instanceUsername){
+        StringBuilder sb = new StringBuilder();
+        sb.append("SELECT * from \"indexed-videos\" where \"instance-username\"=");
+        sb.append(String.format("'%s' ", instanceUsername));
+        sb.append("ORDER BY \"date-indexed\" DESC ");
+        sb.append("LIMIT 1");
+        return sb.toString();
+    }
+
+    public static Video getLastIndexed(String instanceUsername){
+        VideoExtractor extractor = new VideoExtractor();
+        DBConnection.makeQuery(extractor, makeLastIndexedSQL(instanceUsername));
+        return extractor.getInstances().get(0);
     }
 }

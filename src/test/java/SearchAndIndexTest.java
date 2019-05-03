@@ -15,6 +15,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.GeneralSecurityException;
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -68,6 +70,29 @@ class SearchAndIndexTest {
             assertTrue(atLeastSomeVideosHadBlocks);
         }
     }
+
+    @Disabled
+    @Test
+    void getVideosToIndex() throws GeneralSecurityException, IOException {
+
+        String videoURL = "http://localhost:8983/solr/test-videos";
+        String blockURL = "http://localhost:8983/solr/test-blocks";
+
+        SolrClient videoClient = new HttpSolrClient.Builder(videoURL).build();
+        SolrClient blockClient = new HttpSolrClient.Builder(blockURL).build();
+
+        Indexer indexer = new Indexer("last-indexed-test-user", videoClient, blockClient);
+
+        VideoSource simone = new YouTubeChannelVideoSource("UC3KEoMzNz8eYnwBC34RaKCQ",
+                YouTubeChannelVideoSource.ID_Type.UUID);
+
+        indexer.addVideoSource(simone);
+
+        List<URL> urls = indexer.getUrlsToIndexAsOfDate(LocalDate.parse("2019-05-01"));
+
+        assertEquals(urls.size(), 3);
+    }
+
 
     @Test
     void improveQuery() throws ParserConfigurationException, IOException, SAXException {
