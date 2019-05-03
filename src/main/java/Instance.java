@@ -167,23 +167,6 @@ public class Instance {
         stlRunner = new Runner(stlURLInput.getAbsolutePath(), stlDir.getAbsolutePath());
     }
 
-    void generateURLsToIndex(){
-        urlsToIndex = new ArrayList<URL>();
-        for(Iterator<VideoSource> it = videoSources.iterator(); it.hasNext();){
-            VideoSource source = it.next();
-            LocalDate lastIndexedDate = getLastIndexedVideoFromSource(source.getID());
-            List<Video> toAdd = source.getVideos(lastIndexedDate, LocalDate.now());
-
-            addVideosToURLsToIndex(toAdd);
-        }
-    }
-
-    private void addVideosToURLsToIndex(List<Video> toAdd) {
-        for(Iterator<Video> it = toAdd.iterator(); it.hasNext();){
-            urlsToIndex.add(it.next().getUrl());
-        }
-    }
-
     private LocalDate getLastIndexedVideoFromSource(String sourceId) {
         return LocalDate.now();
     }

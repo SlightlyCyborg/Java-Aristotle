@@ -71,7 +71,6 @@ class SearchAndIndexTest {
         }
     }
 
-    @Disabled
     @Test
     void getVideosToIndex() throws GeneralSecurityException, IOException {
 
@@ -92,7 +91,6 @@ class SearchAndIndexTest {
 
         assertEquals(urls.size(), 3);
     }
-
 
     @Test
     void improveQuery() throws ParserConfigurationException, IOException, SAXException {
