@@ -33,4 +33,13 @@ public class YouTubeChannelVideoSourceTest {
             assertEquals(v.id.length(), 11);
         }
     }
+
+    @Test
+    void getByID() throws GeneralSecurityException, IOException {
+        String id = "DvdG7Hx_im0";
+        Video v = YouTubeChannelVideoSource.getByID(id);
+        assertEquals(v.id, id);
+        assertEquals(v.title, "A State Of Trance Episode 912 [#ASOT912] – Armin van Buuren" );
+        //TODO make sure all required fields are instanciated
+    }
 }

@@ -4,18 +4,38 @@ import org.apache.solr.common.SolrDocument;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Files;
+import java.security.GeneralSecurityException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
 public class Video {
+
+    public void initializeFromId() throws GeneralSecurityException, IOException {
+        if(this.source == Source.YOUTUBE){
+            Video v = YouTubeChannelVideoSource.getByID(id);
+            copyAttributes(v);
+        }
+    }
+
+    public enum Source {
+        YOUTUBE
+    };
+
+    private void copyAttributes(Video v){
+        likes       = v.likes;
+        description = v.description;
+        thumbnail   = v.thumbnail;
+        uploaded    = v.uploaded;
+        channel     = v.channel;
+        views       = v.views;
+        likes       = v.likes;
+    }
 
     static class VideoExtractor extends SimpleDBResultExtractor<Video>{
 
@@ -46,6 +66,8 @@ public class Video {
     int likes;
     int views;
 
+    Source source;
+
     Video(SolrDocument doc){
         title = (String) doc.getFieldValue("title_t");
         description = (String) doc.getFieldValue("description_t");
@@ -60,19 +82,48 @@ public class Video {
         blocks = new ArrayList<>();
     }
 
+    Video (String id, Source source){
+        this.source = source;
+        this.id = id;
+        if(source == Source.YOUTUBE){
+            try {
+                url = new URL(String.format("http://youtube.com/watch?v=%s", id));
+            } catch(Exception e){
+                System.err.println("Couldn't form a proper url");
+            }
+        }
+    }
+
     Video (String id){
         this.id = id;
     }
 
     Video (File srt) throws FileNotFoundException {
         id = srt.getName().substring(0, 11);
+        source = Source.YOUTUBE;
+        try {
+            initializeFromId();
+        } catch (GeneralSecurityException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         blocks = new ArrayList<VideoBlock>();
-        captions = "";
         BOMInputStream stream = new BOMInputStream(new FileInputStream(srt));
         Scanner sc = new Scanner(stream);
         sc.useDelimiter("\\Z");
         String content = sc.next();
         loadCaptionBlocks(content);
+        captions = combineCaptionBlocksIntoString();
+    }
+
+    private String combineCaptionBlocksIntoString() {
+        StringBuilder sb = new StringBuilder();
+        for(VideoBlock b: getBlocks()){
+            sb.append(b.getWords());
+            sb.append(" ");
+        }
+        return sb.toString();
     }
 
     void addBlock(VideoBlock block){
@@ -127,6 +178,20 @@ public class Video {
     public static Video getLastIndexed(String instanceUsername){
         VideoExtractor extractor = new VideoExtractor();
         DBConnection.makeQuery(extractor, makeLastIndexedSQL(instanceUsername));
-        return extractor.getInstances().get(0);
+        if(extractor.getInstances().size()>0) {
+            return extractor.getInstances().get(0);
+        } else {
+            return null;
+        }
+    }
+
+    private boolean readyToBeIndexed(){
+        boolean hasTitle, hasBlocks;
+
+        hasTitle = getTitle() != null;
+        hasBlocks = getBlocks() != null;
+
+
+        return hasTitle && hasBlocks;
     }
 }

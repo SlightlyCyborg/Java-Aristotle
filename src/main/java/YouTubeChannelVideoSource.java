@@ -15,6 +15,7 @@ import java.util.List;
 
 public class YouTubeChannelVideoSource implements VideoSource{
 
+
     enum ID_Type{
         USERNAME,
         UUID
@@ -28,6 +29,39 @@ public class YouTubeChannelVideoSource implements VideoSource{
     private YouTube youtubeService;
 
     private static final String DEVELOPER_KEY = "AIzaSyBKLyvIBmbu_cA9xGV_aNkljlP7D8OrAJ8";
+
+
+    public static Video getByID(String id) throws GeneralSecurityException, IOException {
+        YouTube service;
+        final NetHttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
+        service =  new YouTube.Builder(httpTransport, JSON_FACTORY, null)
+                .setApplicationName("aristotle")
+                .build();
+        YouTube.Videos.List request = service.videos().list("snippet, statistics");
+
+        request.setId(id);
+
+        request.setKey(DEVELOPER_KEY);
+        VideoListResponse response = request.execute();
+        List<com.google.api.services.youtube.model.Video> items = response.getItems();
+
+        for(com.google.api.services.youtube.model.Video ytVideo: items){
+            Video aristotleVideo = new Video(id, Video.Source.YOUTUBE);
+            aristotleVideo.title = ytVideo.getSnippet().getTitle();
+            aristotleVideo.description = ytVideo.getSnippet().getDescription();
+            try {
+                aristotleVideo.thumbnail = ytVideo.getSnippet().getThumbnails().getStandard().getUrl();
+            } catch(Exception e) {
+                aristotleVideo.thumbnail = ytVideo.getSnippet().getThumbnails().getDefault().getUrl();
+            }
+            aristotleVideo.uploaded = ytVideo.getSnippet().getPublishedAt().toString();
+            aristotleVideo.channel = ytVideo.getSnippet().getChannelTitle();
+            aristotleVideo.views = ytVideo.getStatistics().getViewCount().intValue();
+            aristotleVideo.likes = ytVideo.getStatistics().getLikeCount().intValue();
+            return aristotleVideo;
+        }
+        return null;
+    }
 
     YouTubeChannelVideoSource(String idOrUsername, ID_Type idType) throws GeneralSecurityException, IOException {
         this.idOrUsername = idOrUsername;
@@ -93,7 +127,7 @@ public class YouTubeChannelVideoSource implements VideoSource{
                 LocalDate publishedDate= published.toLocalDate();
 
                 if(publishedDate.compareTo(earliest) > 0 && publishedDate.compareTo(latest) < 0) {
-                    Video video = new Video(details.getVideoId());
+                    Video video = new Video(details.getVideoId(), Video.Source.YOUTUBE);
                     rv.add(video);
                 }
             }

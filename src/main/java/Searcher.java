@@ -15,11 +15,13 @@ import java.util.Iterator;
 public class Searcher {
     private SolrClient videoConnection, blockConnection;
 
+    private String instanceUsername;
 
 
-    Searcher(SolrClient videoConnection, SolrClient blockConnection){
+    Searcher(String instanceUsername, SolrClient videoConnection, SolrClient blockConnection){
         this.videoConnection = videoConnection;
         this.blockConnection = blockConnection;
+        this.instanceUsername = instanceUsername;
     }
 
     SearchResult search(String searchText) throws IOException, SolrServerException {

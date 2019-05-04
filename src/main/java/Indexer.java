@@ -1,10 +1,16 @@
+import com.google.common.io.Files;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrInputDocument;
+import subtitleDownloader.Runner;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.security.GeneralSecurityException;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -17,10 +23,10 @@ public class Indexer {
 
     private List<VideoSource> videoSources;
 
-    String instanceUsername;
+    Instance instance;
 
-    Indexer(String instanceUsername, SolrClient videoConnection, SolrClient blockConnection){
-        this.instanceUsername = instanceUsername;
+    Indexer(Instance instance, SolrClient videoConnection, SolrClient blockConnection){
+        this.instance = instance;
         videoSources = new ArrayList<VideoSource>();
         this.videoConnection = videoConnection;
         this.blockConnection = blockConnection;
@@ -35,22 +41,25 @@ public class Indexer {
         for(Iterator<Video> it=videos.iterator(); it.hasNext();){
             indexVideoBlocks(it.next());
         }
+        videoConnection.commit();
+        blockConnection.commit();
     }
 
-    private void indexVideoBlocks(Video v) {
+    private void indexVideoBlocks(Video v) throws IOException, SolrServerException {
         List<VideoBlock> blocks = v.getBlocks();
 
         Iterator<VideoBlock> it = blocks.iterator();
         for(it=blocks.iterator(); it.hasNext();) {
             VideoBlock toBeIndexed = it.next();
             SolrInputDocument doc = new SolrInputDocument();
-            doc.addField("id", String.format("%s-%d", v.id, toBeIndexed.id));
+            doc.addField("id", String.format("%s-%s", v.id, toBeIndexed.id));
             doc.addField("video_id_s", v.id);
             doc.addField("captions_t", toBeIndexed.words);
             //Viewable words should work differently.
             //:viewable_words_t (block ::viewable-words) video.clj:103
             doc.addField("start_time_s", toBeIndexed.startTime.toString());
             doc.addField("stop_time_s", toBeIndexed.stopTime.toString());
+            blockConnection.add(doc);
         }
     }
 
@@ -72,6 +81,104 @@ public class Indexer {
         }
     }
 
+    public static void writeURLsToFile(List<URL> urls, File f) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        for(int i=0; i<urls.size(); i++){
+           sb.append(urls.get(i).toString());
+           if(i != urls.size()-1) {
+               sb.append("\n");
+           }
+        }
+
+        FileWriter writer = new FileWriter(f);
+        writer.write(sb.toString());
+        writer.flush();
+        writer.close();
+    }
+
+    public File downloadNewCaptionsAsOfDate(LocalDate latest){
+        List<URL> urls = getUrlsToIndexAsOfDate(latest);
+        File src = null;
+        File captionDir = null;
+        try {
+            src = File.createTempFile("urls", ".tmp");
+            captionDir = Files.createTempDir();
+            writeURLsToFile(urls, src);
+            //Runner runner = new Runner(src.getAbsolutePath(), captionDir.getAbsolutePath());
+            //runner.run();
+            Process proc = Runtime.getRuntime().exec(String.format("java -jar SubtitleDownloader.jar -i %s -o %s",
+                    src.getAbsolutePath(), captionDir.getAbsolutePath()));
+            InputStream out = proc.getInputStream();
+            InputStream err = proc.getErrorStream();
+
+            StringBuilder stdOut = new StringBuilder();
+            StringBuilder stdErr = new StringBuilder();
+            while(proc.isAlive()){
+                if(out.available()>0) {
+                    stdOut.appendCodePoint(out.read());
+                }
+                if(err.available()>0) {
+                    stdErr.appendCodePoint(err.read());
+                }
+            }
+            return captionDir;
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if(src != null) {
+                src.delete();
+            }
+        }
+
+        return null;
+    }
+
+    public void indexAllSinceDate(LocalDate latest) throws IOException, SolrServerException, GeneralSecurityException {
+        
+        File captionDir = downloadNewCaptionsAsOfDate(latest);
+        List<File> captionsToIndex = getRelevantCaptionsFromDir(captionDir);
+        List<Video> videos = new ArrayList<>();
+        for(File srt: captionsToIndex){
+            String videoId = getIdFromCaptionFile(srt);
+            Video v = new Video(srt);
+            v.initializeFromId();
+            v.source = Video.Source.YOUTUBE;
+            videos.add(v);
+
+        }
+        index(videos);
+    }
+
+    private String getIdFromCaptionFile(File caption) {
+            String name = caption.getName();
+            String id = name.substring(0, 11);
+            return id;
+    }
+
+    private static boolean isEnglishSub(String name){
+        return name.matches(".+_en\\..+");
+    }
+
+    private static boolean isSRTVersion(int versionNo, String filename){
+        return versionNo == Integer.parseInt(filename.substring(12, 13));
+    }
+
+    private List<File> getRelevantCaptionsFromDir(File captionDir) {
+        File[] files = captionDir.listFiles();
+
+        List<File> rv = new ArrayList<>();
+
+        for(int i=0; i<files.length; i++){
+            if(isEnglishSub(files[i].getName()) &&
+                    files[i].isFile() &&
+                    isSRTVersion(0, files[i].getName())){
+                rv.add(files[i]);
+            }
+        }
+        return rv;
+    }
+
+
     public List<URL> getUrlsToIndex(){
         LocalDate latestIsPresentDate = LocalDate.now();
         return getUrlsToIndexAsOfDate(latestIsPresentDate);
@@ -81,13 +188,22 @@ public class Indexer {
         ArrayList<URL> urls = new ArrayList<>();
 
         for(VideoSource source: videoSources){
-            Video lastIndexed = Video.getLastIndexed(instanceUsername);
-            List<Video> videos = source.getVideos(lastIndexed.indexedDate, latest);
+            Video lastIndexed = Video.getLastIndexed(instance.getUsername());
+            LocalDate indexedDate;
+            if(lastIndexed == null){
+                indexedDate = LocalDate.parse("1999-12-31");
+            } else {
+                indexedDate = lastIndexed.indexedDate;
+            }
+            List<Video> videos = source.getVideos(indexedDate, latest);
             for(Video video: videos){
                 urls.add(video.getUrl());
             }
         }
 
         return urls;
+    }
+
+    public void delete(List<Video> videos) {
     }
 }

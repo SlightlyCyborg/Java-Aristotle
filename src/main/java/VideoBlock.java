@@ -62,10 +62,10 @@ public class VideoBlock {
 
     public VideoBlock(String id, String words, String time){
         this.id = id;
-        this.words = words;
+        this.words = removeXmlTags(words);
         String[] startAndStop = parseStartAndStopTime(time);
         startTime = new BlockTime(startAndStop[0]);
-        startTime = new BlockTime(startAndStop[1]);
+        stopTime = new BlockTime(startAndStop[1]);
     }
 
     private String[] parseStartAndStopTime(String time) {
@@ -86,5 +86,11 @@ public class VideoBlock {
 
     public BlockTime getStopTime(){
         return stopTime;
+    }
+
+    public static String removeXmlTags(String input){
+        String tagRegex = "<[^>]+>";
+        String output = input.replaceAll(tagRegex, "");
+        return output;
     }
 }

@@ -143,8 +143,8 @@ public class Instance {
         SolrClient blockConnection = new HttpSolrClient.Builder(blockConfig.getURL().toString()).build();
 
 
-        searcher = new Searcher(videoConnection, blockConnection);
-        indexer = new Indexer(username, videoConnection, blockConnection);
+        searcher = new Searcher(username, videoConnection, blockConnection);
+        indexer = new Indexer(this, videoConnection, blockConnection);
     }
 
     public String getName(){
