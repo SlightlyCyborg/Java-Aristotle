@@ -22,4 +22,38 @@ public class VideoTest {
         Video vid = Video.getLastIndexed(username);
         assertEquals(vid.id, "get-last-indexed-test");
     }
+
+    @Test
+    void markAsHavingBeenIndexed(){
+        Video initial = new Video("testID");
+        initial.instanceUsername = "testInstance";
+
+        Video secondary = new Video("testID");
+        secondary.instanceUsername = "testInstance2";
+
+        //Just in case this test failed and deletion never happened;
+        initial.unmarkAsHavingBeenIndexed();
+        secondary.unmarkAsHavingBeenIndexed();
+
+        //Both should be unindexed
+        assertFalse(initial.hasBeenIndexedP());
+        assertFalse(secondary.hasBeenIndexedP());
+
+        //One should be indexed
+        initial.markAsHavingBeenIndexed();
+        assertTrue(initial.hasBeenIndexedP());
+        assertFalse(secondary.hasBeenIndexedP());
+
+        //Both should be indexed
+        secondary.markAsHavingBeenIndexed();
+
+        //Back to being one indexed
+        initial.unmarkAsHavingBeenIndexed();
+
+        //Make sure unmarking initial didn't unmark secondary since they share a videoID
+        assertTrue(secondary.hasBeenIndexedP());
+
+        //Clean up secondary
+        secondary.unmarkAsHavingBeenIndexed();
+    }
 }

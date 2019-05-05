@@ -1,9 +1,8 @@
 import com.google.common.io.Files;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.common.SolrDocument;
+import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrInputDocument;
-import subtitleDownloader.Runner;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -12,7 +11,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -41,8 +39,18 @@ public class Indexer {
         for(Iterator<Video> it=videos.iterator(); it.hasNext();){
             indexVideoBlocks(it.next());
         }
-        videoConnection.commit();
+        UpdateResponse videoUpdateResponse = videoConnection.commit();
         blockConnection.commit();
+
+        markVideosAsIndexIfSuccessful(videoUpdateResponse, videos);
+    }
+
+    private void markVideosAsIndexIfSuccessful(UpdateResponse response, List<Video> videos) {
+        if(response.getStatus() == 0){
+            for(Video v: videos){
+                v.markAsHavingBeenIndexed();
+            }
+        }
     }
 
     private void indexVideoBlocks(Video v) throws IOException, SolrServerException {
@@ -67,7 +75,9 @@ public class Indexer {
 
         for(Iterator<Video> it = videos.iterator(); it.hasNext();){
             Video vidToIndex = it.next();
+            vidToIndex.instanceUsername = instance.getUsername();
             SolrInputDocument documentToIndex = new SolrInputDocument();
+            documentToIndex.addField("video_id_s", vidToIndex.id);
             documentToIndex.addField("title_t", vidToIndex.title);
             documentToIndex.addField("description_t", vidToIndex.description);
             documentToIndex.addField("uploaded_dt", vidToIndex.uploaded);
@@ -76,6 +86,7 @@ public class Indexer {
             documentToIndex.addField("channel_title_s", vidToIndex.channel);
             documentToIndex.addField("captions_t", vidToIndex.captions);
             documentToIndex.addField("thumbnail_s", vidToIndex.thumbnail);
+            documentToIndex.addField("instance_username_ss", vidToIndex.instanceUsername);
 
             videoConnection.add(documentToIndex);
         }

@@ -31,6 +31,7 @@ public class Searcher {
         SolrDocumentList videoDocs = videoResponse.getResults();
         for(Iterator<SolrDocument> it = videoDocs.iterator(); it.hasNext();){
             Video videoToAdd = new Video(it.next());
+            videoToAdd.instanceUsername = instanceUsername;
             QueryResponse blockResponse = searchBlocks(videoToAdd, searchText); //makes a network request
             SolrDocumentList blockDocs = blockResponse.getResults();
 
@@ -53,9 +54,9 @@ public class Searcher {
     }
 
 
-    static String improveQ(String q){
+     String improveQ(String q){
         StringBuilder rv = new StringBuilder();
-        rv.append("title_t:\"");
+        rv.append("(title_t:\"");
         rv.append(q);
         rv.append("\"^10 ");
 
@@ -65,7 +66,9 @@ public class Searcher {
 
         rv.append("\"");
         rv.append(q);
-        rv.append("\"~10000^5");
+        rv.append("\"~10000^5)");
+        rv.append("AND instance_username_ss:");
+        rv.append(instanceUsername);
 
         return rv.toString();
     }

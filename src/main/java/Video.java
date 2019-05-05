@@ -11,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Scanner;
 
@@ -77,7 +78,7 @@ public class Video {
         channel = (String) doc.getFieldValue("channel_title_s");
         captions = (String) doc.getFieldValue("captions_t");
         thumbnail = (String) doc.getFieldValue("thumbnail_s");
-        id = (String) doc.getFieldValue("id");
+        id = (String) doc.getFieldValue("video_id_s");
 
         blocks = new ArrayList<>();
     }
@@ -176,6 +177,7 @@ public class Video {
     }
 
     public static Video getLastIndexed(String instanceUsername){
+        //TODO move to Instance as a non-static method.
         VideoExtractor extractor = new VideoExtractor();
         DBConnection.makeQuery(extractor, makeLastIndexedSQL(instanceUsername));
         if(extractor.getInstances().size()>0) {
@@ -193,5 +195,44 @@ public class Video {
 
 
         return hasTitle && hasBlocks;
+    }
+
+    private String makeInsertSQL(){
+        StringBuilder sb = new StringBuilder();
+        sb.append("insert into \"indexed-videos\" VALUES (?, ?, ?, ?)");
+        return sb.toString();
+    }
+
+    private Object[] toObjectArrayForSQL(){
+        Object[] arr = new Object[4];
+        arr[0] = getID();
+        arr[1] = LocalDate.now();
+        arr[2] = LocalDate.now();
+        arr[3] = instanceUsername;
+        return arr;
+    }
+
+    public void markAsHavingBeenIndexed(){
+        Object[] sqlObjArray = toObjectArrayForSQL();
+        String sql = makeInsertSQL();
+        DBConnection.makeUpdate(sql, sqlObjArray);
+    }
+
+    public void unmarkAsHavingBeenIndexed(){
+        //DBConnection
+        //TODO only delete if instance-username is the same
+        String parameterizedSQL = "DELETE from \"indexed-videos\" where id=? AND \"instance-username\"=?";
+        DBConnection.makeUpdate(parameterizedSQL, id, instanceUsername);
+    }
+
+    public boolean hasBeenIndexedP(){
+        //TODO check across instance-username as well
+        VideoExtractor extractor = new VideoExtractor();
+        String unformatedSQL = "SELECT * from \"indexed-videos\" where id='%s' AND \"instance-username\"='%s'";
+        DBConnection.makeQuery(extractor, String.format(unformatedSQL, id, instanceUsername));
+        if (extractor.getInstances().size() > 0){
+            return true;
+        }
+        return false;
     }
 }

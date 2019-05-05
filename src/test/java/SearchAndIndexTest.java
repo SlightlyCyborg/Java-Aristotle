@@ -46,81 +46,7 @@ class SearchAndIndexTest {
     }
 
     @Test
-    void search() throws IOException, SolrServerException {
-
-        SolrClient videoConnection = new HttpSolrClient.Builder("http://localhost:8983/solr/yang").build();
-        SolrClient blockConnection = new HttpSolrClient.Builder("http://localhost:8983/solr/yang-video-blocks").build();
-
-        Searcher searcher = new Searcher(null, videoConnection, blockConnection);
-
-        SearchResult result = searcher.search("freedom dividend");
-        List<Video> videos = result.getVideos();
-
-        boolean atLeastSomeVideosHadBlocks = false;
-        for(Video v: videos){
-            assertNotNull(v.id);
-            assertEquals(v.id.length(), 11);
-            if(v.blocks.size() > 0) {
-                atLeastSomeVideosHadBlocks = true;
-                assertTrue(v.blocks.get(0).words.length() > 0);
-                assertTrue(v.blocks.get(0).id.length() > 0);
-                assertNotNull(v.blocks.get(0).startTime);
-                assertNotNull(v.blocks.get(0).stopTime);
-            }
-            assertTrue(atLeastSomeVideosHadBlocks);
-        }
-    }
-
-    @Test
-    void getVideosToIndex() throws GeneralSecurityException, IOException {
-
-        String videoURL = "http://localhost:8983/solr/test-videos";
-        String blockURL = "http://localhost:8983/solr/test-blocks";
-
-        SolrClient videoClient = new HttpSolrClient.Builder(videoURL).build();
-        SolrClient blockClient = new HttpSolrClient.Builder(blockURL).build();
-
-        Instance instance = new Instance();
-        instance.setUsername("last-indexed-test-user");
-
-        Indexer indexer = new Indexer(instance, videoClient, blockClient);
-
-        VideoSource simone = new YouTubeChannelVideoSource("UC3KEoMzNz8eYnwBC34RaKCQ",
-                YouTubeChannelVideoSource.ID_Type.UUID);
-
-        indexer.addVideoSource(simone);
-
-        List<URL> urls = indexer.getUrlsToIndexAsOfDate(LocalDate.parse("2019-05-01"));
-
-        assertEquals(urls.size(), 3);
-    }
-
-    @Test
-    void downloadNewCaptionsAsOfDate() throws GeneralSecurityException, IOException {
-        String videoURL = "http://localhost:8983/solr/test-videos";
-        String blockURL = "http://localhost:8983/solr/test-blocks";
-
-        SolrClient videoClient = new HttpSolrClient.Builder(videoURL).build();
-        SolrClient blockClient = new HttpSolrClient.Builder(blockURL).build();
-
-        Instance instance = new Instance();
-        instance.setUsername("last-indexed-test-user");
-
-        Indexer indexer = new Indexer(instance, videoClient, blockClient);
-
-        VideoSource simone = new YouTubeChannelVideoSource("UC3KEoMzNz8eYnwBC34RaKCQ",
-                YouTubeChannelVideoSource.ID_Type.UUID);
-
-        indexer.addVideoSource(simone);
-
-        File outputDir = indexer.downloadNewCaptionsAsOfDate(LocalDate.parse("2019-05-01"));
-        File[] srts = outputDir.listFiles();
-        assertTrue(srts.length>0);
-    }
-
-    @Disabled
-    @Test
-    void testIndexRun() throws IOException, SolrServerException, GeneralSecurityException {
+    void testIndexAndSearch() throws IOException, SolrServerException, GeneralSecurityException {
 
 
         String videoURL = "http://localhost:8983/solr/test-videos";
@@ -137,6 +63,12 @@ class SearchAndIndexTest {
 
         Instance instance = new Instance();
         instance.setUsername("last-indexed-test-user");
+
+        Video mayNotBeCleanForTest = new Video("7x5XRQ07sjU");
+        mayNotBeCleanForTest.instanceUsername = instance.getUsername();
+        // Clean video
+        mayNotBeCleanForTest.unmarkAsHavingBeenIndexed();
+
 
         Indexer indexer = new Indexer(instance, videoClient, blockClient);
         Searcher searcher = new Searcher("last-indexed-test-user", videoClient, blockClient);
@@ -156,25 +88,24 @@ class SearchAndIndexTest {
         result = searcher.search("Brian");
         videos = result.getVideos();
 
-        assertNotEquals(0, videos.size());
+        assertEquals(1, videos.size());
 
-    }
+        boolean atLeastSomeVideosHadBlocks = false;
+        for(Video v: videos){
+            assertTrue(v.hasBeenIndexedP());
 
-    @Test
-    void improveQuery() throws ParserConfigurationException, IOException, SAXException {
-        File xml = new File("test_data/Searcher/improveQuery.xml");
+            assertEquals(v.id.length(), 11);
+            if(v.blocks.size() > 0) {
+                atLeastSomeVideosHadBlocks = true;
+                assertTrue(v.blocks.get(0).words.length() > 0);
+                assertTrue(v.blocks.get(0).id.length() > 0);
+                assertNotNull(v.blocks.get(0).startTime);
+                assertNotNull(v.blocks.get(0).stopTime);
+            }
 
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        DocumentBuilder db = dbf.newDocumentBuilder();
-        Document config = db.parse(xml);
+            v.unmarkAsHavingBeenIndexed();
+        }
 
-        Element query = config.getDocumentElement();
-        Node original = query.getElementsByTagName("original").item(0);
-        Node expectedImproved = query.getElementsByTagName("improved").item(0);
-
-        String actualImprovedQ = Searcher.improveQ(original.getTextContent());
-
-        assertEquals(expectedImproved.getTextContent(), actualImprovedQ);
-
+        assertTrue(atLeastSomeVideosHadBlocks);
     }
 }
