@@ -16,6 +16,8 @@ import java.util.Optional;
 @RestController
 @EnableAutoConfiguration
 public class Server {
+    //This is single process (not a list) due to the "no faster than human" YouTube bot rule.
+    IndexerProcess indexerProcess;
 
     Map<String, Instance> instanceMap;
     Renderer renderer;
@@ -34,6 +36,33 @@ public class Server {
         return renderer.admin(instanceMap.values());
     }
 
+    @GetMapping("/admin/add-instance")
+    String showAddInstance() throws IOException, TemplateException {
+        return Admin.addInstance();
+    }
+
+    @PostMapping("/admin/add-instance")
+    String addInstance(@RequestBody String username,
+                       @RequestBody String name,
+                       @RequestBody String backButtonUrl,
+                       @RequestBody String backButtonText,
+                       @RequestBody String searchBarText,
+                       @RequestBody String youtubeUrl) throws IOException, TemplateException {
+
+        Admin.InstanceConfig config = new Admin.InstanceConfig();
+        config.username = username;
+        config.name = name;
+        config.backButtonText = backButtonText;
+        config.backButtonUrl = backButtonUrl;
+        config.searchBarText = searchBarText;
+        config.youtubeUrl = youtubeUrl;
+
+
+        //Instance instance = Admin.addInstance(config);
+        //indexerProcess.addInstanceToIndex(instance);
+        return admin();
+    }
+
     @PostConstruct
     private void init(){
         List<Instance> instances = Instance.fromDirectory(new File("instances"));
@@ -42,6 +71,8 @@ public class Server {
             instanceMap.put(instance.getUsername(), instance);
         }
         renderer = Renderer.getInstance();
+        indexerProcess = new IndexerProcess();
+        indexerProcess.start();
     }
 
 

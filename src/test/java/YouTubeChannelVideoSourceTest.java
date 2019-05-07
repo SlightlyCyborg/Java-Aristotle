@@ -16,8 +16,17 @@ public class YouTubeChannelVideoSourceTest {
     void testGetVideosPublishedSince() throws GeneralSecurityException, IOException {
         VideoSource simone = new YouTubeChannelVideoSource("UC3KEoMzNz8eYnwBC34RaKCQ",
                 YouTubeChannelVideoSource.ID_Type.UUID);
+        simoneTest(simone);
+    }
 
-        LocalDate the90s = LocalDate.parse("1999-01-01");
+    @Test
+    void youTubeChannelVideoSource_getByYouTubeURL() throws GeneralSecurityException, IOException {
+        VideoSource simone = YouTubeChannelVideoSource.getByYouTubeURL("https://www.youtube.com/channel/UC3KEoMzNz8eYnwBC34RaKCQ");
+        simoneTest(simone);
+    }
+
+    void simoneTest(VideoSource simone){
+         LocalDate the90s = LocalDate.parse("1999-01-01");
 
         LocalDate year2019 = LocalDate.parse("2019-01-01");
 
@@ -33,6 +42,7 @@ public class YouTubeChannelVideoSourceTest {
             assertEquals(v.id.length(), 11);
         }
     }
+
 
     @Test
     void getByID() throws GeneralSecurityException, IOException {

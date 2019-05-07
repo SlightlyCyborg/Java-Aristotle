@@ -48,6 +48,22 @@ public class Instance {
         initializeSQL();
     }
 
+    public Instance(Admin.InstanceConfig config) throws MalformedURLException {
+        Instance rv = new Instance();
+        rv.setUsername(config.username);
+        rv.setName(config.name);
+        rv.setBackButtonURL(config.backButtonUrl);
+        rv.setBackButtonText(config.backButtonText);
+        rv.setSearchBarText(config.searchBarText);
+        rv.active = true;
+
+        solrVideo = new SolrConfig();
+        solrVideo.setCore("videos");
+
+        solrBlock = new SolrConfig();
+        solrBlock.setCore("blocks");
+    }
+
     public static List<Instance> fromDirectory(File dir){
       List<Instance> instances = new ArrayList<Instance>();
 

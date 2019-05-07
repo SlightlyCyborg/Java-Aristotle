@@ -60,7 +60,7 @@ public class SolrConfig {
     }
 
     boolean ssl = false;
-    private String host;
+    private String host = "localhost";
     private String core;
     private int port = 8983;
     private int id = -1;
