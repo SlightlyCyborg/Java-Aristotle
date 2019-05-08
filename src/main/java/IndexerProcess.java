@@ -30,8 +30,16 @@ public class IndexerProcess extends Thread{
 
     private void loop(){
         while(shouldStillRun()){
-            Instance toBeIndexed = getNextIndexer();
-            runIndexer(toBeIndexed);
+            if(somethingToIndex()) {
+                Instance toBeIndexed = getNextIndexer();
+                runIndexer(toBeIndexed);
+            } else {
+                try {
+                    sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -48,8 +56,14 @@ public class IndexerProcess extends Thread{
         return instancesToIndex.poll();
     }
 
+    synchronized private boolean somethingToIndex(){
+        return instancesToIndex.size()>0;
+
+
+    }
+
     synchronized private boolean shouldStillRun(){
-        return stopProcessAfterIndexingAllSignaled && instancesToIndex.size() > 0;
+        return !stopProcessAfterIndexingAllSignaled || instancesToIndex.size() > 0;
     }
 
     private void runIndexer(Instance instance){
@@ -63,6 +77,7 @@ public class IndexerProcess extends Thread{
         } catch (GeneralSecurityException e) {
             e.printStackTrace();
         }
+        updateProgress(null);
     }
 
     private synchronized void updateProgress(Instance currentlyRunning){

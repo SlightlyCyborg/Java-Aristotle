@@ -217,4 +217,13 @@ public class Indexer {
 
     public void delete(List<Video> videos) {
     }
+
+    public void saveSources(){
+        for(VideoSource source: videoSources) {
+            if (source instanceof YouTubeChannelVideoSource){
+                YouTubeURL url = ((YouTubeChannelVideoSource) source).getYouTubeURL();
+                url.saveToDBForUsername(instance.getUsername());
+            }
+        }
+    }
 }

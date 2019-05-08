@@ -32,6 +32,8 @@ class InstanceTest {
                     saveAndLoad.getUsername()));
         }
 
+        //TODO test that video sources are added to index and that the profile pic is created.
+
     }
 
     private boolean instanceExistsWithUsername(List<Instance> instances, String username){

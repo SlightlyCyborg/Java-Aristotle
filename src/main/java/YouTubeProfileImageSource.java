@@ -23,6 +23,7 @@ public class YouTubeProfileImageSource implements ProfileImageSource{
 
     private YouTube youtubeService;
 
+
     private enum Type{
         CHANNEL_ID,
         USERNAME
@@ -35,6 +36,17 @@ public class YouTubeProfileImageSource implements ProfileImageSource{
 
     String usernameOrId;
     Duration cacheLife;
+
+
+    public static YouTubeProfileImageSource fromYouTubeURL(YouTubeURL url) {
+        switch(url.identifierType()){
+            case USERNAME:
+                return fromUsername(url.identifier());
+            case UUID:
+                return fromChannelID(url.identifier());
+        }
+        return null;
+    }
 
     public static YouTubeProfileImageSource fromChannelID(String id, Duration cacheLife){
         return new YouTubeProfileImageSource(id, Type.CHANNEL_ID, cacheLife);

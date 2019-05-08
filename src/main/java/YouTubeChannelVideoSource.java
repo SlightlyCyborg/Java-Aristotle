@@ -32,6 +32,10 @@ public class YouTubeChannelVideoSource implements VideoSource{
 
     public static YouTubeChannelVideoSource getByYouTubeURL(String youtubeURL) throws GeneralSecurityException, IOException {
         YouTubeURL url = new YouTubeURL(youtubeURL);
+        return getByYouTubeURL(url);
+    }
+
+    public static YouTubeChannelVideoSource getByYouTubeURL(YouTubeURL url) throws GeneralSecurityException, IOException {
         String identifier = url.identifier();
         ID_Type type = url.identifierType();
         return new YouTubeChannelVideoSource(identifier, type);
@@ -158,5 +162,9 @@ public class YouTubeChannelVideoSource implements VideoSource{
             return aristotleVideo;
         }
         return null;
+    }
+
+    public YouTubeURL getYouTubeURL(){
+        return new YouTubeURL(idOrUsername, idType);
     }
 }

@@ -29,7 +29,7 @@ public class Video {
     };
 
     private void copyAttributes(Video v){
-        likes       = v.likes;
+        title       = v.title;
         description = v.description;
         thumbnail   = v.thumbnail;
         uploaded    = v.uploaded;

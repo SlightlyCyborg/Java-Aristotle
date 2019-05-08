@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.GeneralSecurityException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -22,6 +23,8 @@ import java.util.Iterator;
 import java.util.List;
 
 public class Instance {
+    
+    YouTubeProfileImageSource imageSource;
 
     URL solrVideoURL, solrBlockURL;
 
@@ -49,19 +52,31 @@ public class Instance {
     }
 
     public Instance(Admin.InstanceConfig config) throws MalformedURLException {
-        Instance rv = new Instance();
-        rv.setUsername(config.username);
-        rv.setName(config.name);
-        rv.setBackButtonURL(config.backButtonUrl);
-        rv.setBackButtonText(config.backButtonText);
-        rv.setSearchBarText(config.searchBarText);
-        rv.active = true;
+        setUsername(config.username);
+        setName(config.name);
+        setBackButtonURL(config.backButtonUrl);
+        setBackButtonText(config.backButtonText);
+        setSearchBarText(config.searchBarText);
+        active = true;
 
         solrVideo = new SolrConfig();
         solrVideo.setCore("videos");
 
         solrBlock = new SolrConfig();
         solrBlock.setCore("blocks");
+
+        initializeSolr(solrVideo, solrBlock);
+        renderer = Renderer.getInstance();
+
+        try {
+            YouTubeURL url = new YouTubeURL(config.youtubeUrl);
+            indexer.addVideoSource(YouTubeChannelVideoSource.getByYouTubeURL(url));
+            imageSource = YouTubeProfileImageSource.fromYouTubeURL(url);
+        } catch (GeneralSecurityException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static List<Instance> fromDirectory(File dir){
@@ -244,9 +259,13 @@ public class Instance {
         int numInserted = DBConnection.makeUpdate(makeInsertionQuery(),
                 username, name, backButtonURL, backButtonText, searchBarText,
                 solrVideo.getId(), solrBlock.getId(), active);
+        indexer.saveSources();
         return numInserted;
     }
 
+    public String getImgSource(){
+        return imageSource.getProfileImageURL().toString();
+    }
 
     static class InstanceDBExtractor extends SimpleDBResultExtractor<Instance>{
 
@@ -254,20 +273,43 @@ public class Instance {
         public void extractInstancesFromDBResult(ResultSet rs) {
             try {
                 while (rs.next()) {
-                    Instance video = new Instance();
-                    video.setName(rs.getString("name"));
-                    video.setUsername(rs.getString("username"));
-                    video.setBackButtonText(rs.getString("backButtonText"));
-                    video.setBackButtonURL(rs.getString("backButtonURL"));
-                    video.setSearchBarText(rs.getString("searchBarText"));
+                    Instance instance = new Instance();
+                    instance.setName(rs.getString("name"));
+                    instance.setUsername(rs.getString("username"));
+                    instance.setBackButtonText(rs.getString("backButtonText"));
+                    instance.setBackButtonURL(rs.getString("backButtonURL"));
+                    instance.setSearchBarText(rs.getString("searchBarText"));
                     int videoConfigId = rs.getInt("videoSolrConfigID");
                     int blockConfigId = rs.getInt("blockSolrConfigID");
                     SolrConfig solrVideo = SolrConfig.fromID(videoConfigId);
                     SolrConfig solrBlock = SolrConfig.fromID(blockConfigId);
 
-                    video.initializeSolr(solrVideo, solrBlock);
+                    instance.initializeSolr(solrVideo, solrBlock);
 
-                    instances.add(video);
+                    List<YouTubeURL> sourceUrls = YouTubeURL.getForUsername(instance.getUsername());
+                    for(YouTubeURL url: sourceUrls){
+                        try {
+                            instance.indexer.addVideoSource(YouTubeChannelVideoSource.getByYouTubeURL(url));
+                        } catch (GeneralSecurityException e) {
+                            e.printStackTrace();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    if(sourceUrls.size() > 0){
+                        YouTubeURL url = sourceUrls.get(0);
+                        switch(url.identifierType()){
+                            case USERNAME:
+                                instance.imageSource = YouTubeProfileImageSource.fromUsername(url.identifier());
+                                break;
+                            case UUID:
+                                instance.imageSource = YouTubeProfileImageSource.fromChannelID(url.identifier());
+                                break;
+                        }
+                    }
+
+                    instances.add(instance);
                 }
             } catch (SQLException e) {
                 e.printStackTrace();

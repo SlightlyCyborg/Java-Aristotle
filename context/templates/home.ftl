@@ -43,7 +43,7 @@
 <div class="container" id="head-container">
     <div class="row">
         <a id="header-img-atag">
-            <img id="daemon-img" src="imgs/${instance.username}/logo"></a>
+            <img id="daemon-img" src="${instance.imgSource}"></a>
     </div>
     <div class="row search-bar-row">
         <form class="search-form" method="GET">

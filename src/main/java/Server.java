@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,11 @@ public class Server {
         }
     }
 
+    @GetMapping("/admin/indexer-progress")
+    String indexerProgress(){
+       return indexerProcess.progress().toHTML();
+    }
+
     @GetMapping("/admin")
     String admin() throws IOException, TemplateException {
         return renderer.admin(instanceMap.values());
@@ -42,12 +48,12 @@ public class Server {
     }
 
     @PostMapping("/admin/add-instance")
-    String addInstance(@RequestBody String username,
-                       @RequestBody String name,
-                       @RequestBody String backButtonUrl,
-                       @RequestBody String backButtonText,
-                       @RequestBody String searchBarText,
-                       @RequestBody String youtubeUrl) throws IOException, TemplateException {
+    String addInstance(@RequestParam String username,
+                       @RequestParam String name,
+                       @RequestParam String backButtonUrl,
+                       @RequestParam String backButtonText,
+                       @RequestParam String searchBarText,
+                       @RequestParam String youtubeUrl) throws IOException, TemplateException {
 
         Admin.InstanceConfig config = new Admin.InstanceConfig();
         config.username = username;
@@ -58,14 +64,22 @@ public class Server {
         config.youtubeUrl = youtubeUrl;
 
 
-        //Instance instance = Admin.addInstance(config);
-        //indexerProcess.addInstanceToIndex(instance);
+        Instance instance = Admin.addInstance(config);
+        if(instance != null) {
+            indexerProcess.addInstanceToIndex(instance);
+            instanceMap.put(instance.getUsername(), instance);
+        }
         return admin();
     }
 
     @PostConstruct
     private void init(){
-        List<Instance> instances = Instance.fromDirectory(new File("instances"));
+        List<Instance> instances = null;
+        try {
+            instances = Instance.fromDB();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
         instanceMap = new HashMap<>();
         for(Instance instance: instances){
             instanceMap.put(instance.getUsername(), instance);
