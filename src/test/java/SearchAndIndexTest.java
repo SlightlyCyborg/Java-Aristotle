@@ -17,6 +17,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -45,51 +46,58 @@ class SearchAndIndexTest {
         }
     }
 
+    static class IndexerAndSearcher{
+        Indexer indexer;
+        Searcher searcher;
+    }
+
+    static String INDEX_AND_SEARCH_TEST_VIDEO_ID = "7x5XRQ07sjU";
+    static String INSTANCE_NAME = "test-index-and-search";
+
+    /*
+     * First the test cleans up from before by deleting the indexed results for this user from Solr and the DB.
+     * Searches for a keyword in the video for the username test-index-and-search, but none exists.
+     * It then runs the indexer up to a certian date, which will index INDEX_AND_SEARCH_TEST_VIDEO_ID.
+     * Finally it researches for the keyword and finds a result.
+     */
     @Test
     void testIndexAndSearch() throws IOException, SolrServerException, GeneralSecurityException {
 
+        IndexerAndSearcher indexerAndSearcher = initializeIndexerAndSearcher();
+        Searcher searcher = indexerAndSearcher.searcher;
+        Indexer indexer = indexerAndSearcher.indexer;
 
-        String videoURL = "http://localhost:8983/solr/test-videos";
-        String blockURL = "http://localhost:8983/solr/test-blocks";
-
-        SolrClient videoClient = new HttpSolrClient.Builder(videoURL).build();
-        SolrClient blockClient = new HttpSolrClient.Builder(blockURL).build();
-
-        videoClient.deleteByQuery("*:*");
-        blockClient.deleteByQuery("*:*");
-
-        videoClient.commit();
-        blockClient.commit();
-
-        Instance instance = new Instance();
-        instance.setUsername("last-indexed-test-user");
-
-        Video mayNotBeCleanForTest = new Video("7x5XRQ07sjU");
-        mayNotBeCleanForTest.instanceUsername = instance.getUsername();
-        // Clean video
-        mayNotBeCleanForTest.unmarkAsHavingBeenIndexed();
-
-
-        Indexer indexer = new Indexer(instance, videoClient, blockClient);
-        Searcher searcher = new Searcher("last-indexed-test-user", videoClient, blockClient);
-
-        VideoSource simone = new YouTubeChannelVideoSource("UC3KEoMzNz8eYnwBC34RaKCQ",
-                YouTubeChannelVideoSource.ID_Type.UUID);
-
-        indexer.addVideoSource(simone);
-
-        SearchResult result = searcher.search("robot");
-        List<Video> videos = result.getVideos();
-
-        assertEquals(0, videos.size());
-
+        assertSearchReturnsNothing(searcher);
         indexer.indexAllSinceDate(LocalDate.parse("2019-03-01"));
+        List<Video> videos = assertSearchReturnsAVideo(searcher);
+        assertSomeVideosHadBlocks(videos);
+    }
 
-        result = searcher.search("Brian");
-        videos = result.getVideos();
+    private void assertSearchReturnsNothing(Searcher searcher) {
+        SearchResult result = null;
+        try {
+            result = searcher.search("Brian");
+            List<Video> videos = result.getVideos();
+            assertEquals(0, videos.size());
+        } catch (Exception e) {
+            fail("unable to search for empty result");
+        }
+    }
 
-        assertEquals(1, videos.size());
+    private List<Video> assertSearchReturnsAVideo(Searcher searcher){
+        SearchResult result = null;
+        try {
+            result = searcher.search("Brian");
+            List<Video> videos = result.getVideos();
+            assertEquals(1, videos.size());
+            return videos;
+        } catch (Exception e) {
+            fail("search threw and exception");
+        }
+        return null;
+    }
 
+    private void assertSomeVideosHadBlocks(List<Video> videos){
         boolean atLeastSomeVideosHadBlocks = false;
         for(Video v: videos){
             assertTrue(v.hasBeenIndexedP());
@@ -103,9 +111,58 @@ class SearchAndIndexTest {
                 assertNotNull(v.blocks.get(0).stopTime);
             }
 
-            v.unmarkAsHavingBeenIndexed();
+            assertTrue(atLeastSomeVideosHadBlocks);
         }
+    }
 
-        assertTrue(atLeastSomeVideosHadBlocks);
+    private static IndexerAndSearcher initializeIndexerAndSearcher(){
+        try {
+            String videoURL = "http://localhost:8983/solr/test-videos";
+            String blockURL = "http://localhost:8983/solr/test-blocks";
+
+            SolrClient videoClient = new HttpSolrClient.Builder(videoURL).build(); // Takes a long time.
+            SolrClient blockClient = new HttpSolrClient.Builder(blockURL).build();
+
+            cleanSolrForIndexAndSearchTest(videoClient, blockClient);
+
+            Instance instance = new Instance();
+            instance.setUsername(INSTANCE_NAME);
+
+            cleanDBforIndexAndSearchTest(instance);
+
+            Indexer indexer = new Indexer(instance, videoClient, blockClient);
+            Searcher searcher = new Searcher(instance.getUsername(), videoClient, blockClient);
+
+            VideoSource simone = new YouTubeChannelVideoSource("UC3KEoMzNz8eYnwBC34RaKCQ",
+                    YouTubeChannelVideoSource.ID_Type.UUID);
+
+            indexer.addVideoSource(simone);
+
+            IndexerAndSearcher rv = new IndexerAndSearcher();
+            rv.indexer = indexer;
+            rv.searcher = searcher;
+            return rv;
+        } catch (Exception e){
+            fail("unable to initialize IndexerAndSearcher");
+        }
+        return null;
+    }
+
+    private static void cleanSolrForIndexAndSearchTest(SolrClient videoClient, SolrClient blockClient){
+        try {
+            videoClient.deleteByQuery("*:*");
+            blockClient.deleteByQuery("*:*");
+
+            videoClient.commit();
+            blockClient.commit();
+        } catch (Exception e) {
+            fail("unable to delete solr indices required to be deleted for this test");
+        }
+    }
+
+    private static void cleanDBforIndexAndSearchTest(Instance instance){
+        Video toDelete = new Video(INDEX_AND_SEARCH_TEST_VIDEO_ID);
+        toDelete.instanceUsername = instance.getUsername();
+        toDelete.unmarkAsHavingBeenIndexed();
     }
 }
