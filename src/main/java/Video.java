@@ -17,13 +17,6 @@ import java.util.Scanner;
 
 public class Video {
 
-    public void initializeFromId() throws GeneralSecurityException, IOException {
-        if(this.source == Source.YOUTUBE){
-            Video v = YouTubeChannelVideoSource.getByID(id);
-            copyAttributes(v);
-        }
-    }
-
     public enum Source {
         YOUTUBE
     };
@@ -77,8 +70,11 @@ public class Video {
         views = (int) doc.getFieldValue("views_i");
         channel = (String) doc.getFieldValue("channel_title_s");
         captions = (String) doc.getFieldValue("captions_t");
-        thumbnail = (String) doc.getFieldValue("thumbnail_s");
         id = (String) doc.getFieldValue("video_id_s");
+        thumbnail = (String) doc.getFieldValue("thumbnail_s");
+        if (thumbnail == null){
+            thumbnail = String.format("http://img.youtube.com/vi/%s/0.jpg", id);
+        }
 
         blocks = new ArrayList<>();
     }
@@ -102,13 +98,6 @@ public class Video {
     Video (File srt) throws FileNotFoundException {
         id = srt.getName().substring(0, 11);
         source = Source.YOUTUBE;
-        try {
-            initializeFromId();
-        } catch (GeneralSecurityException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
         blocks = new ArrayList<VideoBlock>();
         BOMInputStream stream = new BOMInputStream(new FileInputStream(srt));
         Scanner sc = new Scanner(stream);
@@ -187,14 +176,16 @@ public class Video {
         }
     }
 
-    private boolean readyToBeIndexed(){
-        boolean hasTitle, hasBlocks;
+    public boolean readyToBeIndexed(){
+        boolean hasTitle, hasBlocks, hasThumbnail;
 
         hasTitle = getTitle() != null;
         hasBlocks = getBlocks() != null;
+        hasThumbnail = getThumbnail() != null;
 
 
-        return hasTitle && hasBlocks;
+
+        return hasTitle && hasBlocks && hasThumbnail;
     }
 
     private String makeInsertSQL(){
@@ -235,4 +226,14 @@ public class Video {
         }
         return false;
     }
+
+    public boolean isFullyInstanciatedFromYT(){
+        return id != null &&
+                title != null &&
+                description != null &&
+                thumbnail != null &&
+                uploaded != null &&
+                channel != null;
+    }
+
 }

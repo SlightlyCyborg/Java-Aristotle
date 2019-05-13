@@ -17,6 +17,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,7 +52,8 @@ class SearchAndIndexTest {
         Searcher searcher;
     }
 
-    static String INDEX_AND_SEARCH_TEST_VIDEO_ID = "7x5XRQ07sjU";
+    static LocalDate INDEX_CUTOFF_DATE = LocalDate.parse("2019-03-11");
+    static String[] INDEX_AND_SEARCH_TEST_VIDEO_IDS = {"7x5XRQ07sjU","oyvvEHACGHU"};
     static String INSTANCE_NAME = "test-index-and-search";
 
     /*
@@ -68,7 +70,7 @@ class SearchAndIndexTest {
         Indexer indexer = indexerAndSearcher.indexer;
 
         assertSearchReturnsNothing(searcher);
-        indexer.indexAllSinceDate(LocalDate.parse("2019-03-01"));
+        indexer.indexAllSinceDate(INDEX_CUTOFF_DATE);
         List<Video> videos = assertSearchReturnsAVideo(searcher);
         assertSomeVideosHadBlocks(videos);
     }
@@ -87,9 +89,9 @@ class SearchAndIndexTest {
     private List<Video> assertSearchReturnsAVideo(Searcher searcher){
         SearchResult result = null;
         try {
-            result = searcher.search("Brian");
+            result = searcher.search("tumor");
             List<Video> videos = result.getVideos();
-            assertEquals(1, videos.size());
+            assertEquals(INDEX_AND_SEARCH_TEST_VIDEO_IDS.length, videos.size());
             return videos;
         } catch (Exception e) {
             fail("search threw and exception");
@@ -161,8 +163,10 @@ class SearchAndIndexTest {
     }
 
     private static void cleanDBforIndexAndSearchTest(Instance instance){
-        Video toDelete = new Video(INDEX_AND_SEARCH_TEST_VIDEO_ID);
-        toDelete.instanceUsername = instance.getUsername();
-        toDelete.unmarkAsHavingBeenIndexed();
+        for(String id: INDEX_AND_SEARCH_TEST_VIDEO_IDS) {
+            Video toDelete = new Video(id);
+            toDelete.instanceUsername = instance.getUsername();
+            toDelete.unmarkAsHavingBeenIndexed();
+        }
     }
 }

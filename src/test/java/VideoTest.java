@@ -16,12 +16,6 @@ public class VideoTest {
         assertEquals(vid.blocks.get(111).id, "112");
     }
 
-    @Test
-    void getLastIndexed(){
-        String username = "last-indexed-test-user";
-        Video vid = Video.getLastIndexed(username);
-        assertEquals(vid.id, "get-last-indexed-test");
-    }
 
     @Test
     void markAsHavingBeenIndexed(){

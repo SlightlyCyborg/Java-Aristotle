@@ -2,6 +2,7 @@ import com.google.common.io.Files;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.UpdateResponse;
+import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrInputDocument;
 
 import java.io.File;
@@ -12,6 +13,7 @@ import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -48,48 +50,58 @@ public class Indexer {
     private void markVideosAsIndexIfSuccessful(UpdateResponse response, List<Video> videos) {
         if(response.getStatus() == 0){
             for(Video v: videos){
-                v.markAsHavingBeenIndexed();
+                if(v.readyToBeIndexed()) {
+                    v.markAsHavingBeenIndexed();
+                }
             }
         }
     }
 
     private void indexVideoBlocks(Video v) throws IOException, SolrServerException {
-        List<VideoBlock> blocks = v.getBlocks();
+        if(v.readyToBeIndexed()){
+            List<VideoBlock> blocks = v.getBlocks();
+            Iterator<VideoBlock> it = blocks.iterator();
 
-        Iterator<VideoBlock> it = blocks.iterator();
-        for(it=blocks.iterator(); it.hasNext();) {
-            VideoBlock toBeIndexed = it.next();
-            SolrInputDocument doc = new SolrInputDocument();
-            doc.addField("id", String.format("%s-%s", v.id, toBeIndexed.id));
-            doc.addField("video_id_s", v.id);
-            doc.addField("captions_t", toBeIndexed.words);
-            //Viewable words should work differently.
-            //:viewable_words_t (block ::viewable-words) video.clj:103
-            doc.addField("start_time_s", toBeIndexed.startTime.toString());
-            doc.addField("stop_time_s", toBeIndexed.stopTime.toString());
-            blockConnection.add(doc);
+            List<SolrInputDocument> docs = new ArrayList<>();
+
+            for (it = blocks.iterator(); it.hasNext(); ) {
+                VideoBlock toBeIndexed = it.next();
+                SolrInputDocument doc = new SolrInputDocument();
+                doc.addField("id", String.format("%s-%s", v.id, toBeIndexed.id));
+                doc.addField("video_id_s", v.id);
+                doc.addField("captions_t", toBeIndexed.words);
+                //Viewable words should work differently.
+                //:viewable_words_t (block ::viewable-words) video.clj:103
+                doc.addField("start_time_s", toBeIndexed.startTime.toString());
+                doc.addField("stop_time_s", toBeIndexed.stopTime.toString());
+                docs.add(doc);
+            }
+            blockConnection.add(docs);
         }
     }
 
     void indexFullVideos(List<Video> videos) throws IOException, SolrServerException {
+        List<SolrInputDocument> docs = new ArrayList<>();
 
         for(Iterator<Video> it = videos.iterator(); it.hasNext();){
             Video vidToIndex = it.next();
-            vidToIndex.instanceUsername = instance.getUsername();
-            SolrInputDocument documentToIndex = new SolrInputDocument();
-            documentToIndex.addField("video_id_s", vidToIndex.id);
-            documentToIndex.addField("title_t", vidToIndex.title);
-            documentToIndex.addField("description_t", vidToIndex.description);
-            documentToIndex.addField("uploaded_dt", vidToIndex.uploaded);
-            documentToIndex.addField("likes_i", vidToIndex.likes);
-            documentToIndex.addField("views_i", vidToIndex.views);
-            documentToIndex.addField("channel_title_s", vidToIndex.channel);
-            documentToIndex.addField("captions_t", vidToIndex.captions);
-            documentToIndex.addField("thumbnail_s", vidToIndex.thumbnail);
-            documentToIndex.addField("instance_username_ss", vidToIndex.instanceUsername);
-
-            videoConnection.add(documentToIndex);
+            if(vidToIndex.readyToBeIndexed()) {
+                vidToIndex.instanceUsername = instance.getUsername();
+                SolrInputDocument documentToIndex = new SolrInputDocument();
+                documentToIndex.addField("video_id_s", vidToIndex.id);
+                documentToIndex.addField("title_t", vidToIndex.title);
+                documentToIndex.addField("description_t", vidToIndex.description);
+                documentToIndex.addField("uploaded_dt", vidToIndex.uploaded);
+                documentToIndex.addField("likes_i", vidToIndex.likes);
+                documentToIndex.addField("views_i", vidToIndex.views);
+                documentToIndex.addField("channel_title_s", vidToIndex.channel);
+                documentToIndex.addField("captions_t", vidToIndex.captions);
+                documentToIndex.addField("thumbnail_s", vidToIndex.thumbnail);
+                documentToIndex.addField("instance_username_ss", vidToIndex.instanceUsername);
+                docs.add(documentToIndex);
+            }
         }
+        videoConnection.add(docs);
     }
 
     public static void writeURLsToFile(List<URL> urls, File f) throws IOException {
@@ -152,11 +164,11 @@ public class Indexer {
         for(File srt: captionsToIndex){
             String videoId = getIdFromCaptionFile(srt);
             Video v = new Video(srt);
-            v.initializeFromId();
             v.source = Video.Source.YOUTUBE;
             videos.add(v);
 
         }
+        YouTubeChannelVideoSource.initializeDetailsForVideos(videos);
         index(videos);
     }
 

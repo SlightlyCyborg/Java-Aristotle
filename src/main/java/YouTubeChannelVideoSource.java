@@ -9,12 +9,13 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 public class YouTubeChannelVideoSource implements VideoSource{
 
+    static boolean alreadyRetried=false;
+
+    public static final int VIDEO_LIST_BATCH_SIZE = 50;
 
     enum ID_Type{
         USERNAME,
@@ -131,40 +132,112 @@ public class YouTubeChannelVideoSource implements VideoSource{
                 .build();
     }
 
-
-    public static Video getByID(String id) throws GeneralSecurityException, IOException {
-        YouTube service;
-        final NetHttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
-        service =  new YouTube.Builder(httpTransport, JSON_FACTORY, null)
-                .setApplicationName("aristotle")
-                .build();
-        YouTube.Videos.List request = service.videos().list("snippet, statistics");
-
-        request.setId(id);
-
-        request.setKey(DEVELOPER_KEY);
-        VideoListResponse response = request.execute();
-        List<com.google.api.services.youtube.model.Video> items = response.getItems();
-
-        for(com.google.api.services.youtube.model.Video ytVideo: items){
-            Video aristotleVideo = new Video(id, Video.Source.YOUTUBE);
-            aristotleVideo.title = ytVideo.getSnippet().getTitle();
-            aristotleVideo.description = ytVideo.getSnippet().getDescription();
-            try {
-                aristotleVideo.thumbnail = ytVideo.getSnippet().getThumbnails().getStandard().getUrl();
-            } catch(Exception e) {
-                aristotleVideo.thumbnail = ytVideo.getSnippet().getThumbnails().getDefault().getUrl();
-            }
-            aristotleVideo.uploaded = ytVideo.getSnippet().getPublishedAt().toString();
-            aristotleVideo.channel = ytVideo.getSnippet().getChannelTitle();
-            aristotleVideo.views = ytVideo.getStatistics().getViewCount().intValue();
-            aristotleVideo.likes = ytVideo.getStatistics().getLikeCount().intValue();
-            return aristotleVideo;
-        }
-        return null;
-    }
-
     public YouTubeURL getYouTubeURL(){
         return new YouTubeURL(idOrUsername, idType);
+    }
+
+    private static List<List<Video>> partitionVideosForYouTubeQuery(List<Video> videos){
+        int maximumBatchSizeForYouTubeAPI = VIDEO_LIST_BATCH_SIZE;
+        List<List<Video>> partitions = new ArrayList<>();
+        for(int i=0; i<videos.size(); i++){
+
+            int partitionNumber = i/maximumBatchSizeForYouTubeAPI;
+            if(i%maximumBatchSizeForYouTubeAPI == 0) partitions.add(new ArrayList<>());
+
+            partitions.get(partitionNumber).add(videos.get(i));
+        }
+        return partitions;
+    }
+
+    public static void initializeDetailsForVideos(List<Video> videos){
+        List<List<Video>> partitions = partitionVideosForYouTubeQuery(videos);
+        List<String> ids = new ArrayList<>();
+        for(List<Video> batch: partitions){
+           initializeDetailsForBatchOfVideos(batch);
+        }
+    }
+
+    public static void initializeDetailsForBatchOfVideos(List<Video> batch){
+        StringBuilder idBuilder = new StringBuilder();
+        Map<String, Video> videoMap = mapifyBatch(batch);
+        for(int i=0; i<batch.size(); i++){
+            idBuilder.append(batch.get(i).getID());
+            if(i < batch.size()-1){
+                idBuilder.append(",");
+            }
+        }
+        try {
+            YouTube service;
+            final NetHttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
+            service = new YouTube.Builder(httpTransport, JSON_FACTORY, null)
+                    .setApplicationName("aristotle")
+                    .build();
+            YouTube.Videos.List request = service.videos().list("snippet, statistics");
+
+            request.setMaxResults((long)50).setId(idBuilder.toString());
+
+            request.setKey(DEVELOPER_KEY);
+            VideoListResponse response = request.execute();
+            List<com.google.api.services.youtube.model.Video> items = response.getItems();
+
+            for (com.google.api.services.youtube.model.Video ytVideo : items) {
+                try {
+                    Video aristotleVideo = videoMap.get(ytVideo.getId());
+                    aristotleVideo.source = Video.Source.YOUTUBE;
+                    aristotleVideo.title = ytVideo.getSnippet().getTitle();
+                    aristotleVideo.description = ytVideo.getSnippet().getDescription();
+                    aristotleVideo.thumbnail = handleThumbnails(ytVideo);
+                    aristotleVideo.uploaded = ytVideo.getSnippet().getPublishedAt().toString();
+                    aristotleVideo.channel = ytVideo.getSnippet().getChannelTitle();
+                    aristotleVideo.views = ytVideo.getStatistics().getViewCount().intValue();
+                    aristotleVideo.likes = ytVideo.getStatistics().getLikeCount().intValue();
+                } catch(Exception e){
+                    System.err.println("video cant be added");
+                }
+            }
+        }catch(Exception e){
+            if(!alreadyRetried){
+                alreadyRetried = true;
+               initializeDetailsForVideos(batch);
+            }
+        }
+        alreadyRetried = false;
+    }
+
+    private static String handleThumbnails(com.google.api.services.youtube.model.Video ytVideo){
+        try {
+            ThumbnailDetails thumbnails = ytVideo.getSnippet().getThumbnails();
+            if (thumbnails.getMaxres() != null) {
+                return thumbnails.getMaxres().getUrl();
+            }
+
+            if (thumbnails.getHigh() != null) {
+                return thumbnails.getHigh().getUrl();
+            }
+
+            if (thumbnails.getMedium() != null) {
+                return thumbnails.getMedium().getUrl();
+            }
+
+            if (thumbnails.getStandard() != null) {
+                return thumbnails.getStandard().getUrl();
+            }
+
+            if (thumbnails.getDefault() != null) {
+                return thumbnails.getDefault().getUrl();
+            }
+
+            return "";
+        } catch(NullPointerException e){
+            return "";
+        }
+    }
+
+    private static Map<String, Video> mapifyBatch(List<Video> batch){
+        Map<String, Video> rv= new HashMap<>();
+        for(Video v: batch){
+            rv.put(v.getID(), v);
+        }
+        return rv;
     }
 }

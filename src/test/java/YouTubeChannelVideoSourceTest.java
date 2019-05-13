@@ -1,11 +1,15 @@
 import org.junit.jupiter.api.Test;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -43,13 +47,21 @@ public class YouTubeChannelVideoSourceTest {
         }
     }
 
-
     @Test
-    void getByID() throws GeneralSecurityException, IOException {
-        String id = "DvdG7Hx_im0";
-        Video v = YouTubeChannelVideoSource.getByID(id);
-        assertEquals(v.id, id);
-        assertEquals(v.title, "A State Of Trance Episode 912 [#ASOT912] – Armin van Buuren" );
-        //TODO make sure all required fields are instanciated
+    void testInstanciateDetailsForVideos(){
+        List<Video> videos= new ArrayList<>();
+        try {
+            Scanner ids = new Scanner(new FileInputStream("test_data/YouTubeChannelVideoSource/ids")).useDelimiter("\n");
+            while(ids.hasNext()){
+                videos.add(new Video(ids.next()));
+            }
+            YouTubeChannelVideoSource.initializeDetailsForVideos(videos);
+            for(Video v: videos){
+                assertTrue(v.isFullyInstanciatedFromYT());
+            }
+
+        } catch(FileNotFoundException e){
+
+        }
     }
 }

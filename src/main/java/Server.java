@@ -2,12 +2,18 @@ import freemarker.template.TemplateException;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.springframework.boot.*;
 import org.springframework.boot.autoconfigure.*;
+import org.springframework.context.annotation.Import;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +28,17 @@ public class Server {
 
     Map<String, Instance> instanceMap;
     Renderer renderer;
+
+    @RequestMapping("/")
+    String landing(){
+        try {
+            String text = new String(Files.readAllBytes(Paths.get("templates/home.html")), StandardCharsets.UTF_8);
+            return text;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
 
     @RequestMapping("/{siteName}")
     String home(@PathVariable("siteName") String siteName, @RequestParam("terms") Optional<String> terms) throws IOException, SolrServerException {
@@ -53,8 +70,12 @@ public class Server {
                        @RequestParam String backButtonUrl,
                        @RequestParam String backButtonText,
                        @RequestParam String searchBarText,
-                       @RequestParam String youtubeUrl) throws IOException, TemplateException {
-
+                       @RequestParam String youtubeUrl,
+                       @RequestParam String password
+    ) throws IOException, TemplateException {
+        if(!password.equals("aristotle2k19")){
+            return "unauthorized";
+        }
         Admin.InstanceConfig config = new Admin.InstanceConfig();
         config.username = username;
         config.name = name;
