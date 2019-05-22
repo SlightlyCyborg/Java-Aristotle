@@ -1,5 +1,10 @@
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import freemarker.template.TemplateException;
+
 import org.apache.solr.client.solrj.SolrServerException;
+
 import org.springframework.boot.*;
 import org.springframework.boot.autoconfigure.*;
 import org.springframework.context.annotation.Import;
@@ -9,6 +14,7 @@ import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOError;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
@@ -25,13 +31,14 @@ import java.util.Optional;
 public class Server {
     //This is single process (not a list) due to the "no faster than human" YouTube bot rule.
     IndexerProcess indexerProcess;
-
+    Logger log = LogManager.getLogger();
     Map<String, Instance> instanceMap;
     Renderer renderer;
 
     @RequestMapping("/")
     String landing(){
         try {
+        	log.info("landing page accesed");
             String text = new String(Files.readAllBytes(Paths.get("templates/home.html")), StandardCharsets.UTF_8);
             return text;
         } catch (IOException e) {
@@ -43,8 +50,10 @@ public class Server {
     @RequestMapping("/{siteName}")
     String home(@PathVariable("siteName") String siteName, @RequestParam("terms") Optional<String> terms) throws IOException, SolrServerException {
         if(terms.isPresent()){
+        	log.info(String.format("GET search: /%s?terms=%s", siteName, terms.get()));
             return instanceMap.get(siteName).search(terms.get());
         } else {
+        	log.info(String.format("GET home: /%s", siteName));
             return instanceMap.get(siteName).home();
         }
     }
@@ -73,7 +82,9 @@ public class Server {
                        @RequestParam String youtubeUrl,
                        @RequestParam String password
     ) throws IOException, TemplateException {
+    	log.info("GET /admin/add-instance");
         if(!password.equals("aristotle2k19")){
+        	log.warn(String.format("POST addInstance: faild authorization using password: %s", password));
             return "unauthorized";
         }
         Admin.InstanceConfig config = new Admin.InstanceConfig();
@@ -89,6 +100,8 @@ public class Server {
         if(instance != null) {
             indexerProcess.addInstanceToIndex(instance);
             instanceMap.put(instance.getUsername(), instance);
+        } else {
+        	log.warn("POST /admin/add-instance failed: instance return from Admin.addInstance(config) == null");
         }
         return admin();
     }
@@ -98,8 +111,9 @@ public class Server {
         List<Instance> instances = null;
         try {
             instances = Instance.fromDB();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+        	log.fatal("unrecoverable: getting instances fromDB failed. try restarting the DB.");
+        	throw new IOError(e);
         }
         instanceMap = new HashMap<>();
         for(Instance instance: instances){

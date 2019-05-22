@@ -168,7 +168,11 @@ public class Video {
     public static Video getLastIndexed(String instanceUsername){
         //TODO move to Instance as a non-static method.
         VideoExtractor extractor = new VideoExtractor();
+        try {
         DBConnection.makeQuery(extractor, makeLastIndexedSQL(instanceUsername));
+        } catch (DBConnection.DBQueryException e) {
+        	
+        }
         if(extractor.getInstances().size()>0) {
             return extractor.getInstances().get(0);
         } else {
@@ -220,7 +224,11 @@ public class Video {
         //TODO check across instance-username as well
         VideoExtractor extractor = new VideoExtractor();
         String unformatedSQL = "SELECT * from \"indexed-videos\" where id='%s' AND \"instance-username\"='%s'";
+        try {
         DBConnection.makeQuery(extractor, String.format(unformatedSQL, id, instanceUsername));
+        } catch (DBConnection.DBQueryException e) {
+        	
+        }
         if (extractor.getInstances().size() > 0){
             return true;
         }

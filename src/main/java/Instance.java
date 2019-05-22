@@ -79,26 +79,6 @@ public class Instance {
         }
     }
 
-    public static List<Instance> fromDirectory(File dir){
-      List<Instance> instances = new ArrayList<Instance>();
-
-      if(!dir.isDirectory()){
-          throw new IllegalArgumentException();
-      }
-
-      File[] xmls = dir.listFiles();
-
-      for(int i=0; i<xmls.length; i++){
-          try {
-              instances.add(fromFile(xmls[i]));
-          } catch(Exception e){
-              System.err.println("Exception caught while making an instance from directory");
-          }
-      }
-
-      return instances;
-    }
-
     public static Instance fromFile(File xml) throws IOException, SAXException, ParserConfigurationException {
         Instance rv = new Instance();
 
@@ -139,14 +119,18 @@ public class Instance {
 
     static String activeInstanceSQLStr;
 
-    public static List<Instance> fromDB() throws MalformedURLException {
+    public static List<Instance> fromDB() throws Exception {
         InstanceDBExtractor extractor = new InstanceDBExtractor();
 
         String sql = "SELECT * from instances where active=true";
 
-        DBConnection.makeQuery(extractor, sql);
-        List<Instance> instances = extractor.getInstances();
+        try {
+        	DBConnection.makeQuery(extractor, sql);
+        } catch (DBConnection.DBQueryException e){
+        	throw new Exception("unable to get instances from db");
+        }
 
+        List<Instance> instances = extractor.getInstances();
         return instances;
     }
 

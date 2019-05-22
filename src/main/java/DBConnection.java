@@ -1,7 +1,20 @@
 import java.sql.*;
-import java.util.function.Function;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class DBConnection {
+
+    public static class DBQueryException extends Exception {
+		public DBQueryException(String msg) {
+			super(msg);
+		}
+
+		private static final long serialVersionUID = 1L;
+	}
+
+
+	static Logger log = LogManager.getLogger();
 
     // JDBC driver name and database URL
     static final String JDBC_DRIVER = "org.postgresql.Driver";
@@ -30,7 +43,6 @@ public class DBConnection {
             return numberOfDocsInserted;
         }catch(SQLException se){
             //Handle errors for JDBC
-            se.printStackTrace();
         }catch(Exception e){
             //Handle errors for Class.forName
             e.printStackTrace();
@@ -101,7 +113,7 @@ public class DBConnection {
     }
 
 
-    public static <O> void makeQuery(DBResultExtractor<O> extractor, String sql) {
+    public static <O> void makeQuery(DBResultExtractor<O> extractor, String sql) throws DBQueryException {
         Connection conn = null;
         Statement stmt = null;
         Object rv;
@@ -123,10 +135,10 @@ public class DBConnection {
             conn.close();
         }catch(SQLException se){
             //Handle errors for JDBC
-            se.printStackTrace();
+        	log.warn("queryDB: sql error: %s", se.getMessage());
+        	throw new DBQueryException("");
         }catch(Exception e){
-            //Handle errors for Class.forName
-            e.printStackTrace();
+        	log.warn("queryDB threw exception: %s", e.getMessage());
         }finally{
             //finally block used to close resources
             try{

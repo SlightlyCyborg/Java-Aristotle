@@ -156,7 +156,10 @@ public class SolrConfig {
     private static SolrConfig getDBSingleton(SolrConfig config){
         SolrConfigExtractor extractor = new SolrConfigExtractor();
         String query = makeAlreadyInDBQuery(config);
-        DBConnection.makeQuery(extractor, query);
+        try {
+			DBConnection.makeQuery(extractor, query);
+		} catch (DBConnection.DBQueryException e) {
+		}
         List<SolrConfig> configs = extractor.getInstances();
         if(configs.size()>0){
             return configs.get(0) ;
@@ -185,7 +188,11 @@ public class SolrConfig {
 
     public static SolrConfig fromID(int id) {
         SolrConfigExtractor extractor = new SolrConfigExtractor();
+        try {
         DBConnection.makeQuery(extractor, String.format("SELECT * from \"solr-configs\" where id=%d", id));
+        } catch (DBConnection.DBQueryException e){
+        	
+        }
         List<SolrConfig> instances = extractor.getInstances();
         if(instances.size() == 0){
             return null;

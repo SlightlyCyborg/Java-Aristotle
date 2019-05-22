@@ -80,7 +80,11 @@ public class YouTubeURL {
     public static List<YouTubeURL> getForUsername(String username){
       String sql = String.format("select * from \"youtube-urls\" where \"instance-username\"='%s'", username);
       YouTubeURLExtractor extractor = new YouTubeURLExtractor();
+      try {
       DBConnection.makeQuery(extractor, sql);
+      } catch (DBConnection.DBQueryException e) {
+    	  
+      }
       return extractor.getInstances();
     }
 }
