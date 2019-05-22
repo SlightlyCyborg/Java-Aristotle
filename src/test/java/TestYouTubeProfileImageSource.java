@@ -1,29 +1,24 @@
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
 import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
-import static org.junit.jupiter.api.Assertions.*;
+import junit.framework.TestCase;
 
-public class TestYouTubeProfileImageSource {
-    @Test
-    void testFromUsername(){
+
+public class TestYouTubeProfileImageSource extends TestCase{
+    public void testFromUsername(){
         YouTubeProfileImageSource imgSource = YouTubeProfileImageSource.fromUsername("JordanPetersonVideos");
         String expected = "https://yt3.ggpht.com/a/AGF-l79xqV5D7Q1Iyq-zH6CSkNFAEfcx5HKWOf0ytA=s240-mo-c-c0xffffffff-rj-k-no";
         doesProfileImageReturnCorrectly(imgSource, expected);
     }
 
-    @Test
-    void testFromChannelID(){
+    public void testFromChannelID(){
         YouTubeProfileImageSource imgSource = YouTubeProfileImageSource.fromChannelID("UC3KEoMzNz8eYnwBC34RaKCQ");
         String expected = "https://yt3.ggpht.com/a/AGF-l79qi5YAvOj6ebtkB-jZMhziLo1j8IGDzUynYQ=s240-mo-c-c0xffffffff-rj-k-no";
         doesProfileImageReturnCorrectly(imgSource, expected);
     }
 
-    @Test
-    void testByUsernameCachingUpdatesProperly(){
+    public void testByUsernameCachingUpdatesProperly(){
         Duration cacheTime = Duration.ofSeconds(1);
         LocalDateTime start = LocalDateTime.now();
         YouTubeProfileImageSource imgSource = YouTubeProfileImageSource.fromUsername("JordanPetersonVideos", cacheTime);
@@ -31,8 +26,7 @@ public class TestYouTubeProfileImageSource {
         runCacheUpdateTestHelper(imgSource, expected, cacheTime, start);
     }
 
-    @Test
-    void testByChannelIDCachingUpdatesProperly(){
+    public void testByChannelIDCachingUpdatesProperly(){
         Duration cacheTime = Duration.ofSeconds(1);
         LocalDateTime start = LocalDateTime.now();
         YouTubeProfileImageSource imgSource = YouTubeProfileImageSource.fromChannelID("UC3KEoMzNz8eYnwBC34RaKCQ", cacheTime);

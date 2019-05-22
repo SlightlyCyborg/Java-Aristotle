@@ -1,13 +1,12 @@
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 
-public class VideoTest {
+import junit.framework.TestCase;
 
-    @Test
-    void fromFileTest() throws FileNotFoundException {
+public class VideoTest extends TestCase{
+
+    public void testFromFileTest() throws FileNotFoundException {
         File srt = new File("test_data/Video/oVvPfq0MoaQ_0_en.srt");
         Video vid = new Video(srt);
         assertEquals(vid.id, "oVvPfq0MoaQ");
@@ -17,8 +16,7 @@ public class VideoTest {
     }
 
 
-    @Test
-    void markAsHavingBeenIndexed(){
+    public void testMarkAsHavingBeenIndexed(){
         Video initial = new Video("testID");
         initial.instanceUsername = "testInstance";
 

@@ -2,11 +2,12 @@ import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
-import org.junit.jupiter.api.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
+
+import junit.framework.TestCase;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -21,11 +22,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+public class SearchAndIndexTest extends TestCase {
 
-class SearchAndIndexTest {
-
-    @Test
     void SolrConfigGetURL(){
         SolrConfig config = new SolrConfig();
         config.setSSL(true);
@@ -62,8 +60,7 @@ class SearchAndIndexTest {
      * It then runs the indexer up to a certian date, which will index INDEX_AND_SEARCH_TEST_VIDEO_ID.
      * Finally it researches for the keyword and finds a result.
      */
-    @Test
-    void testIndexAndSearch() throws IOException, SolrServerException, GeneralSecurityException {
+    public void testIndexAndSearch() throws IOException, SolrServerException, GeneralSecurityException {
 
         IndexerAndSearcher indexerAndSearcher = initializeIndexerAndSearcher();
         Searcher searcher = indexerAndSearcher.searcher;

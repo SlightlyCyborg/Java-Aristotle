@@ -1,12 +1,9 @@
-import org.junit.jupiter.api.Test;
-
 import java.net.MalformedURLException;
 
-import static org.junit.jupiter.api.Assertions.*;
+import junit.framework.TestCase;
 
-public class SolrConfigTest {
-    @Test
-    void db(){
+public class SolrConfigTest extends TestCase{
+    public void testDb(){
         SolrConfig config = new SolrConfig();
         config.setHost("foo.com");
         config.setPort(6969);
@@ -32,8 +29,7 @@ public class SolrConfigTest {
 
     }
 
-    @Test
-    void getById() throws MalformedURLException {
+    public void testGetById() throws MalformedURLException {
         SolrConfig config = SolrConfig.fromID(5);
         assertEquals(config.getURL().toString(), "https://test:6969/solr/video");
     }

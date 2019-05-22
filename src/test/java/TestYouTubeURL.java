@@ -1,13 +1,9 @@
-import org.junit.jupiter.api.Test;
-
 import java.net.MalformedURLException;
 import java.util.List;
+import junit.framework.TestCase;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-public class TestYouTubeURL {
-    @Test
-    void mainTest(){
+public class TestYouTubeURL extends TestCase{
+    public void testURLCreation(){
         try {
             YouTubeURL me = new YouTubeURL("https://www.youtube.com/channel/UChsxOQf3j6Jw_BbzWcsIQPg?view_as=subscriber");
             YouTubeURL jarron = new YouTubeURL("https://www.youtube.com/channel/UCpuc5y6UMrBHFs1S4Qg9xjA/");
@@ -28,8 +24,7 @@ public class TestYouTubeURL {
         }
     }
 
-    @Test
-    void dbTest(){
+    public void testPersistence(){
        try {
 
            DBConnection.makeUpdate("delete from \"youtube-urls\" where \"instance-username\"='test'");

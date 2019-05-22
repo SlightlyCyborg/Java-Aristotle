@@ -1,14 +1,12 @@
-import org.junit.jupiter.api.Test;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import junit.framework.TestCase;
 
-public class DBConnectionTest {
+public class DBConnectionTest extends TestCase{
 
     public static class DBTestObject{
         String id;
@@ -32,26 +30,31 @@ public class DBConnectionTest {
         }
     }
 
-    @Test
-    void testQuery(){
+    public void testQuery(){
         DBTestObjectExtractor extractor = new DBTestObjectExtractor();
-
-        DBConnection.makeQuery(extractor, "SELECT * from \"db-connection-test\"");
+        try {
+        	DBConnection.makeQuery(extractor, "SELECT * from \"db-connection-test\"");
+        } catch(Exception e) {
+        	fail(e.getMessage());
+        }
         List<DBTestObject> testObjs = extractor.getInstances();
         assertEquals(testObjs.get(0).id, "foo");
         assertEquals(testObjs.get(1).id, "bar");
         assertEquals(testObjs.get(2).id, "baz");
     }
 
-    @Test
-    void updateTest(){
+    public void testUpdate(){
         //prep just in case cleanup failed
         int deleted = DBConnection.makeUpdate("delete from \"db-connection-test\" where id='ding'");
 
         DBTestObjectExtractor extractor = new DBTestObjectExtractor();
 
         int inserted = DBConnection.makeUpdate("insert into \"db-connection-test\" VALUES ('ding')");
-        DBConnection.makeQuery(extractor, "select * from \"db-connection-test\" where id='ding'");
+        try {
+        	DBConnection.makeQuery(extractor, "select * from \"db-connection-test\" where id='ding'");
+        } catch (DBConnection.DBQueryException e) {
+        	fail(e.getMessage());
+        }
         List<DBTestObject> testObjs = extractor.getInstances();
         assertEquals(testObjs.size(), 1);
 

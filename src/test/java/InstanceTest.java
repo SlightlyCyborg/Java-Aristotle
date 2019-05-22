@@ -1,6 +1,6 @@
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
+
+import junit.framework.TestCase;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
@@ -8,11 +8,9 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+public class InstanceTest extends TestCase{
 
-class InstanceTest {
-
-    @Test void saveAndLoadInstanceFromDB() throws ParserConfigurationException, SAXException, IOException {
+    public void testSaveAndLoadInstanceFromDB() throws ParserConfigurationException, SAXException, IOException {
         File jbpXML = new File("test_data/Instance/saveAndLoad.xml");
         Instance saveAndLoad = Instance.fromFile(jbpXML);
         try {
@@ -47,8 +45,7 @@ class InstanceTest {
         return exists;
     }
 
-    @Test
-    void fromFile(){
+    public void testFromFile(){
 
         File jbpXML = new File("test_data/InstanceFactory/jordanBPeterson.xml");
 
@@ -63,23 +60,4 @@ class InstanceTest {
             fail(e.getMessage());
         }
     }
-
-    @Test
-    void fromDirectory(){
-        File dir = new File("test_data/InstanceFactory");
-
-        try{
-            List<Instance> factoryResult = Instance.fromDirectory(dir);
-            assertEquals(2, factoryResult.size());
-            boolean foundJBP=false, justEnough=false;
-            for(Iterator<Instance> it = factoryResult.iterator(); it.hasNext(); ){
-                Instance possibleMatch = it.next();
-                if(possibleMatch.getName().equals("Jordan Peterson"))foundJBP = true;
-                if(possibleMatch.getName().equals("JustEnough")) justEnough = true;
-            }
-            assertTrue(foundJBP&&justEnough);
-        } catch (Exception e){
-            fail(e.getMessage());
-        }
-    }
-}
+ }

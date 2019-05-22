@@ -1,5 +1,3 @@
-import org.junit.jupiter.api.Test;
-
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -11,20 +9,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-import static org.junit.jupiter.api.Assertions.*;
+import junit.framework.TestCase;
 
+public class YouTubeChannelVideoSourceTest extends TestCase{
 
-public class YouTubeChannelVideoSourceTest {
-
-    @Test
-    void testGetVideosPublishedSince() throws GeneralSecurityException, IOException {
+    public void testGetVideosPublishedSince() throws GeneralSecurityException, IOException {
         VideoSource simone = new YouTubeChannelVideoSource("UC3KEoMzNz8eYnwBC34RaKCQ",
                 YouTubeChannelVideoSource.ID_Type.UUID);
         simoneTest(simone);
     }
 
-    @Test
-    void youTubeChannelVideoSource_getByYouTubeURL() throws GeneralSecurityException, IOException {
+    public void testYouTubeChannelVideoSource_getByYouTubeURL() throws GeneralSecurityException, IOException {
         VideoSource simone = YouTubeChannelVideoSource.getByYouTubeURL("https://www.youtube.com/channel/UC3KEoMzNz8eYnwBC34RaKCQ");
         simoneTest(simone);
     }
@@ -47,8 +42,7 @@ public class YouTubeChannelVideoSourceTest {
         }
     }
 
-    @Test
-    void testInstanciateDetailsForVideos(){
+    public void testInstanciateDetailsForVideos(){
         List<Video> videos= new ArrayList<>();
         try {
             Scanner ids = new Scanner(new FileInputStream("test_data/YouTubeChannelVideoSource/ids")).useDelimiter("\n");
