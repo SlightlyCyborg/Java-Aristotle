@@ -1,9 +1,14 @@
 import com.google.common.io.Files;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrInputDocument;
+import org.apache.tomcat.jni.Time;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -18,6 +23,8 @@ import java.util.Iterator;
 import java.util.List;
 
 public class Indexer {
+	
+    Logger log = LogManager.getLogger();
 
     private SolrClient videoConnection, blockConnection;
 
@@ -26,6 +33,7 @@ public class Indexer {
     Instance instance;
 
     Indexer(Instance instance, SolrClient videoConnection, SolrClient blockConnection){
+    	log.info("Creating Indexer for instance: {}", instance.getName());
         this.instance = instance;
         videoSources = new ArrayList<VideoSource>();
         this.videoConnection = videoConnection;
@@ -38,11 +46,16 @@ public class Indexer {
 
     void index(List<Video> videos) throws IOException, SolrServerException {
         indexFullVideos(videos);
+        UpdateResponse videoUpdateResponse = videoConnection.commit();
         for(Iterator<Video> it=videos.iterator(); it.hasNext();){
             indexVideoBlocks(it.next());
+            blockConnection.commit();
+            try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) {
+				log.warn("cant sleep for 50ms after each video block commit");
+			}
         }
-        UpdateResponse videoUpdateResponse = videoConnection.commit();
-        blockConnection.commit();
 
         markVideosAsIndexIfSuccessful(videoUpdateResponse, videos);
     }
@@ -81,6 +94,8 @@ public class Indexer {
     }
 
     void indexFullVideos(List<Video> videos) throws IOException, SolrServerException {
+    	log.info("indexing Video objects");
+    	
         List<SolrInputDocument> docs = new ArrayList<>();
 
         for(Iterator<Video> it = videos.iterator(); it.hasNext();){
@@ -102,6 +117,7 @@ public class Indexer {
             }
         }
         videoConnection.add(docs);
+        log.info("added Video docs");
     }
 
     public static void writeURLsToFile(List<URL> urls, File f) throws IOException {
@@ -129,6 +145,7 @@ public class Indexer {
             writeURLsToFile(urls, src);
             //Runner runner = new Runner(src.getAbsolutePath(), captionDir.getAbsolutePath());
             //runner.run();
+            log.info("Downloading captions for {} as of date {}", instance.getName(), latest);
             Process proc = Runtime.getRuntime().exec(String.format("java -jar SubtitleDownloader.jar -i %s -o %s",
                     src.getAbsolutePath(), captionDir.getAbsolutePath()));
             InputStream out = proc.getInputStream();
@@ -143,7 +160,17 @@ public class Indexer {
                 if(err.available()>0) {
                     stdErr.appendCodePoint(err.read());
                 }
+                
+                if(stdOut.length()>0 && stdOut.charAt(stdOut.length()-1) == '\n') {
+                	log.debug("captionDL: " + stdOut.toString());
+                	stdOut = new StringBuilder();
+                }
+                if(stdErr.length()>0 && stdErr.charAt(stdOut.length()-1) == '\n') {
+                	log.warn("captionDL: " + stdErr.toString());
+                	stdErr = new StringBuilder();
+                }
             }
+            log.info("Finished Downloading Captions");
             return captionDir;
         } catch (IOException e) {
             e.printStackTrace();
@@ -157,25 +184,21 @@ public class Indexer {
     }
 
     public void indexAllSinceDate(LocalDate latest) throws IOException, SolrServerException, GeneralSecurityException {
-        
+    	String logMsg;
         File captionDir = downloadNewCaptionsAsOfDate(latest);
         List<File> captionsToIndex = getRelevantCaptionsFromDir(captionDir);
         List<Video> videos = new ArrayList<>();
         for(File srt: captionsToIndex){
-            String videoId = getIdFromCaptionFile(srt);
             Video v = new Video(srt);
             v.source = Video.Source.YOUTUBE;
             videos.add(v);
-
         }
+        logMsg = "finished loading srts into Video objects for {}";
+        log.info(logMsg, instance.getName());
         YouTubeChannelVideoSource.initializeDetailsForVideos(videos);
+        logMsg = "finished initializingDetailsForVideos for instance {}";
+        log.info(logMsg);
         index(videos);
-    }
-
-    private String getIdFromCaptionFile(File caption) {
-            String name = caption.getName();
-            String id = name.substring(0, 11);
-            return id;
     }
 
     private static boolean isEnglishSub(String name){

@@ -1,6 +1,8 @@
 import org.apache.commons.io.input.BOMInputStream;
 import org.apache.solr.common.SolrDocument;
 
+import jdk.internal.jline.internal.Log;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -99,12 +101,18 @@ public class Video {
         id = srt.getName().substring(0, 11);
         source = Source.YOUTUBE;
         blocks = new ArrayList<VideoBlock>();
-        BOMInputStream stream = new BOMInputStream(new FileInputStream(srt));
+        FileInputStream f = new FileInputStream(srt);
+        BOMInputStream stream = new BOMInputStream(f);
         Scanner sc = new Scanner(stream);
         sc.useDelimiter("\\Z");
         String content = sc.next();
         loadCaptionBlocks(content);
         captions = combineCaptionBlocksIntoString();
+        try {
+        f.close();
+        } catch (Exception e) {
+        	Log.info("cant close file");
+        }
     }
 
     private String combineCaptionBlocksIntoString() {

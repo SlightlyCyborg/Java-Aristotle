@@ -1,5 +1,8 @@
 import org.apache.solr.client.solrj.SolrServerException;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.time.LocalDate;
@@ -10,6 +13,7 @@ import java.util.Queue;
 
 
 public class IndexerProcess extends Thread{
+    Logger log = LogManager.getLogger();
     Queue<Instance> instancesToIndex;
     boolean stopProcessAfterIndexingAllSignaled = false;
     Instance currentInstance;
@@ -69,13 +73,15 @@ public class IndexerProcess extends Thread{
     private void runIndexer(Instance instance){
         updateProgress(instance);
         try {
+        	log.info("starting indexer for {}", instance.getName());
             instance.indexer.indexAllSinceDate(LocalDate.now());
+            log.info("indexer for {} has returned", instance.getName());
         } catch (IOException e) {
-            e.printStackTrace();
+        	log.warn("IOException: {}", e.getMessage());
         } catch (SolrServerException e) {
-            e.printStackTrace();
+        	log.warn("SolrServerException: {}", e.getMessage());
         } catch (GeneralSecurityException e) {
-            e.printStackTrace();
+        	log.warn("GeneralSecurityException: {}", e.getMessage());
         }
         updateProgress(null);
     }
