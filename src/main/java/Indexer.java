@@ -165,7 +165,7 @@ public class Indexer {
                 	log.debug("captionDL: " + stdOut.toString());
                 	stdOut = new StringBuilder();
                 }
-                if(stdErr.length()>0 && stdErr.charAt(stdOut.length()-1) == '\n') {
+                if(stdErr.length()>0 && stdErr.charAt(stdErr.length()-1) == '\n') {
                 	log.warn("captionDL: " + stdErr.toString());
                 	stdErr = new StringBuilder();
                 }
