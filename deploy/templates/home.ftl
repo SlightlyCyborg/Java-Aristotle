@@ -48,7 +48,11 @@
     <div class="row search-bar-row">
         <form class="search-form" method="GET">
             <div class="form-group">
+            <#if terms??>
+                <input class="form-control" id="search" name="terms" value="${terms}" placeholder="${instance.searchBarText}" type="text">
+			<#else>
                 <input class="form-control" id="search" name="terms" placeholder="${instance.searchBarText}" type="text">
+			</#if>
             </div>
             <div class="form-group">
                 <button class="btn btn-lg btn-primary" type="submit">Search</button>

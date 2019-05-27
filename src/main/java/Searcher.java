@@ -25,7 +25,7 @@ public class Searcher {
     }
 
     SearchResult search(String searchText) throws IOException, SolrServerException {
-        SearchResult rv = new SearchResult();
+        SearchResult rv = new SearchResult(searchText);
 
         QueryResponse videoResponse = searchVideos(searchText); //make a network request
         SolrDocumentList videoDocs = videoResponse.getResults();

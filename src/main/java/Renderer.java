@@ -59,6 +59,9 @@ public class Renderer extends Configuration {
 
     public String search(Instance instance, SearchResult result) {
         Map<String, Object> root = new HashMap<>();
+        if(result.getTerms() != null) {
+        	root.put("terms", result.getTerms());
+        }
         root.put("instance", instance);
         root.put("hasResults", true);
         root.put("videos", result.getVideos());
