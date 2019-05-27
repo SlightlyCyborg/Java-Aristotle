@@ -29,6 +29,9 @@
                 <label>Search Bar Text:<input name="searchBarText" type="text"></label>
             </div>
             <div class="form-group">
+                <label>password:<input name="password" type="text"></label>
+            </div>
+            <div class="form-group">
                 <button type="submit">Add Instance Now</button>
             </div>
         </form>
