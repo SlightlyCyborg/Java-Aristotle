@@ -133,6 +133,27 @@ public class Instance {
         List<Instance> instances = extractor.getInstances();
         return instances;
     }
+    
+    public static Instance fromDB(String username) throws Exception {
+    	InstanceDBExtractor extractor = new InstanceDBExtractor();
+
+        String unformated = "SELECT * from instances where active=true AND username='%s'";
+        String sql = String.format(unformated, username);
+
+        try {
+        	DBConnection.makeQuery(extractor, sql);
+        } catch (DBConnection.DBQueryException e){
+        	throw new Exception("unable to get instances from db");
+        }
+
+        List<Instance> instances = extractor.getInstances();
+        try {
+        	return instances.get(0);
+        } catch(Exception e) {
+        	throw new Exception("instance isn't in DB");
+        }
+
+    }
 
     public String home(){
         return renderer.home(this);
@@ -302,4 +323,9 @@ public class Instance {
             }
         }
     }
+
+	public void removeFromDB(String username) {
+		String query = "DELETE from instances WHERE username=?";
+		DBConnection.makeUpdate(query, username);
+	}
 }
