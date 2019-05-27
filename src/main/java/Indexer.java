@@ -31,6 +31,8 @@ public class Indexer {
     private List<VideoSource> videoSources;
 
     Instance instance;
+    
+    int BATCH_SIZE = 100;
 
     Indexer(Instance instance, SolrClient videoConnection, SolrClient blockConnection){
     	log.info("Creating Indexer for instance: {}", instance.getName());
@@ -135,8 +137,7 @@ public class Indexer {
         writer.close();
     }
 
-    public File downloadNewCaptionsAsOfDate(LocalDate latest){
-        List<URL> urls = getUrlsToIndexAsOfDate(latest);
+    public File downloadCaptionUrls(List<URL> urls){
         File src = null;
         File captionDir = null;
         try {
@@ -145,7 +146,7 @@ public class Indexer {
             writeURLsToFile(urls, src);
             //Runner runner = new Runner(src.getAbsolutePath(), captionDir.getAbsolutePath());
             //runner.run();
-            log.info("Downloading captions for {} as of date {}", instance.getName(), latest);
+            log.info("Downloading captions for {}", instance.getName());
             Process proc = Runtime.getRuntime().exec(String.format("java -jar SubtitleDownloader.jar -i %s -o %s",
                     src.getAbsolutePath(), captionDir.getAbsolutePath()));
             InputStream out = proc.getInputStream();
@@ -182,23 +183,39 @@ public class Indexer {
 
         return null;
     }
+    
+    private <T> List<List<T>> batchify(List<T> toBeBatched, int batchSize){
+    	List<List<T>> rv = new ArrayList<>();
+    	for(int i=0; i<toBeBatched.size(); i++) {
+    		int batch = i/batchSize;
+    		if(i%batchSize == 0){
+    			rv.add(new ArrayList<T>());
+    		}
+    		rv.get(batch).add(toBeBatched.get(i));
+    	}
+    	return rv;
+    }
 
     public void indexAllSinceDate(LocalDate latest) throws IOException, SolrServerException, GeneralSecurityException {
     	String logMsg;
-        File captionDir = downloadNewCaptionsAsOfDate(latest);
-        List<File> captionsToIndex = getRelevantCaptionsFromDir(captionDir);
-        List<Video> videos = new ArrayList<>();
-        for(File srt: captionsToIndex){
-            Video v = new Video(srt);
-            v.source = Video.Source.YOUTUBE;
-            videos.add(v);
-        }
-        logMsg = "finished loading srts into Video objects for {}";
-        log.info(logMsg, instance.getName());
-        YouTubeChannelVideoSource.initializeDetailsForVideos(videos);
-        logMsg = "finished initializingDetailsForVideos for instance {}";
-        log.info(logMsg);
-        index(videos);
+        List<URL> urls = getUrlsToIndexAsOfDate(latest);
+    	List<List<URL>> batches = batchify(urls, BATCH_SIZE);
+    	for(List<URL> batch: batches) {
+    		File captionDir = downloadCaptionUrls(batch);
+    		List<File> captionsToIndex = getRelevantCaptionsFromDir(captionDir);
+    		List<Video> videos = new ArrayList<>();
+    		for(File srt: captionsToIndex){
+    			Video v = new Video(srt);
+    			v.source = Video.Source.YOUTUBE;
+    			videos.add(v);
+    		}
+    		logMsg = "finished loading srts into Video objects for {}";
+    		log.info(logMsg, instance.getName());
+    		YouTubeChannelVideoSource.initializeDetailsForVideos(videos);
+    		logMsg = "finished initializingDetailsForVideos for instance {}";
+    		log.info(logMsg);
+    		index(videos);
+    	}
     }
 
     private static boolean isEnglishSub(String name){
@@ -231,6 +248,7 @@ public class Indexer {
     }
 
     public List<URL> getUrlsToIndexAsOfDate(LocalDate latest){
+    	log.info("fetching urlsToIndex for {} as of {}", instance.getName(), latest);
         ArrayList<URL> urls = new ArrayList<>();
 
         for(VideoSource source: videoSources){

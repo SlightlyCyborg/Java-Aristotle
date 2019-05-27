@@ -17,7 +17,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Scanner;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class Video {
+
+    Logger log = LogManager.getLogger();
 
     public enum Source {
         YOUTUBE
@@ -109,9 +114,9 @@ public class Video {
         loadCaptionBlocks(content);
         captions = combineCaptionBlocksIntoString();
         try {
-        f.close();
+        	f.close();
         } catch (Exception e) {
-        	Log.info("cant close file");
+        	log.info("cant close file");
         }
     }
 
@@ -133,10 +138,14 @@ public class Video {
         for(int i = 0; i < unparsedBlocks.length; i++){
             String[] parsedBlock = unparsedBlocks[i].split("\r\n");
             String id, words, time;
-            id = parsedBlock[0];
-            time = parsedBlock[1];
-            words = parsedBlock[2] ;
-            blocks.add(new VideoBlock(id, words, time));
+            try {
+            	id = parsedBlock[0];
+            	time = parsedBlock[1];
+            	words = parsedBlock[2] ;
+            	blocks.add(new VideoBlock(id, words, time));
+            } catch(Exception e) {
+            	log.warn("malformed or empty block for: {} with exception: {}", this.getId(), e.getMessage());
+            }
         }
     }
 
