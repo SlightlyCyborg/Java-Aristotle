@@ -33,21 +33,4 @@ public class Admin {
         }
         return null;
     }
-
-    static String addInstance(){
-        String error = null;
-        try {
-            Map<String, Object> dataModel = new HashMap<String, Object>();
-            Template template = renderer.getTemplate("add-instance.ftl");
-            StringWriter out = new StringWriter();
-            template.process(dataModel, out);
-            return out.toString();
-        } catch (IOException e) {
-            error = e.getMessage();
-        } catch (TemplateException e) {
-            error = e.getMessage();
-        }
-
-        return error;
-    }
 }

@@ -69,7 +69,7 @@ public class Server {
 
     @GetMapping("/admin/add-instance")
     String showAddInstance() throws IOException, TemplateException {
-        return Admin.addInstance();
+        return renderer.addInstance();
     }
 
     @PostMapping("/admin/add-instance")

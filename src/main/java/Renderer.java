@@ -73,4 +73,21 @@ public class Renderer extends Configuration {
         template.process(root, out);
         return out.toString();
     }
+    
+    public String addInstance(){
+        String error = null;
+        try {
+            Map<String, Object> dataModel = new HashMap<String, Object>();
+            Template template = getTemplate("add-instance.ftl");
+            StringWriter out = new StringWriter();
+            template.process(dataModel, out);
+            return out.toString();
+        } catch (IOException e) {
+            error = e.getMessage();
+        } catch (TemplateException e) {
+            error = e.getMessage();
+        }
+
+        return error;
+    }
 }
