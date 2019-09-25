@@ -1,7 +1,7 @@
 # Aristotle: Search YouTube channels based on captions.
 Generates a list of timestamps with search results.
 
-![Search](https://github.com/slightlycyborg/Java-Aristotle/raw/master/vlogbrothers.png "YCombinator Search")
+![Search](https://github.com/slightlycyborg/Java-Aristotle/raw/master/1904labs.png "YCombinator Search")
 
 ## Dependencies
 A solr server running with 2 cores `blocks` & `videos`. `test-blocks` & `test-videos` for testing
