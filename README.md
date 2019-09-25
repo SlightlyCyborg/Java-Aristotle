@@ -1,6 +1,7 @@
 # Aristotle: Search YouTube channels based on captions.
 Generates a list of timestamps with search results.
-Rewrite of my [previous Clojure implementation](https://github.com/SlightlyCyborg/Aristotle)
+
+Rewrite of my [previous Clojure implementation](https://github.com/SlightlyCyborg/Aristotle).
 
 ![Search](https://github.com/slightlycyborg/Java-Aristotle/raw/master/1904labs.png "YCombinator Search")
 
