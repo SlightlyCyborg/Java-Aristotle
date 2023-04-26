@@ -1,19 +1,14 @@
 import org.apache.commons.io.input.BOMInputStream;
 import org.apache.solr.common.SolrDocument;
 
-import jdk.internal.jline.internal.Log;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.net.URL;
-import java.security.GeneralSecurityException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Scanner;
 

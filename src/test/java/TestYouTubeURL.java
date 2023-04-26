@@ -7,7 +7,7 @@ public class TestYouTubeURL extends TestCase{
         try {
             YouTubeURL me = new YouTubeURL("https://www.youtube.com/channel/UChsxOQf3j6Jw_BbzWcsIQPg?view_as=subscriber");
             YouTubeURL jarron = new YouTubeURL("https://www.youtube.com/channel/UCpuc5y6UMrBHFs1S4Qg9xjA/");
-            YouTubeURL jre = new YouTubeURL("https://www.youtube.com/user/PowerfulJRE");
+            YouTubeURL asha = new YouTubeURL("https://www.youtube.com/@ashalogos9221");
 
             assertEquals("UChsxOQf3j6Jw_BbzWcsIQPg", me.identifier());
             assertEquals(YouTubeChannelVideoSource.ID_Type.UUID, me.identifierType());
@@ -15,9 +15,8 @@ public class TestYouTubeURL extends TestCase{
             assertEquals("UCpuc5y6UMrBHFs1S4Qg9xjA", jarron.identifier());
             assertEquals(YouTubeChannelVideoSource.ID_Type.UUID, jarron.identifierType());
 
-
-            assertEquals("PowerfulJRE", jre.identifier());
-            assertEquals(YouTubeChannelVideoSource.ID_Type.USERNAME, jre.identifierType());
+            assertEquals("ashalogos9221", asha.identifier());
+            assertEquals(YouTubeChannelVideoSource.ID_Type.USERNAME, asha.identifierType());
 
         } catch (MalformedURLException e) {
             e.printStackTrace();

@@ -1,8 +1,8 @@
-import java.net.MalformedURLException;
-
 import junit.framework.TestCase;
 
-public class SolrConfigTest extends TestCase{
+import java.net.MalformedURLException;
+
+public class SolrConfigTest extends TestCase {
     public void testDb(){
         SolrConfig config = new SolrConfig();
         config.setHost("foo.com");

@@ -13,35 +13,16 @@ public class YouTubeURL {
         URL url = new URL(urlToParse);
         String path = url.getPath();
         String[] segments = path.split("\\/");
-        int index = findTypeSegmentIndex(segments);
-        if(index>-1 && segments.length>=index+2){
-            identifier = segments[index+1];
+        String unparsedId = segments[segments.length-1];
+        boolean isUsername = unparsedId.charAt(0) == ('@');
+        if(isUsername) {
+           this.identifier = unparsedId.substring(1);
+           this.type = YouTubeChannelVideoSource.ID_Type.USERNAME;
+        } else {
+            this.identifier = unparsedId.substring(0);
+            this.type = YouTubeChannelVideoSource.ID_Type.UUID;
         }
-        type = getType(segments[index]);
     }
-
-    private YouTubeChannelVideoSource.ID_Type getType(String type) {
-        switch (type){
-            case "channel":
-                return YouTubeChannelVideoSource.ID_Type.UUID;
-            case "user":
-                return YouTubeChannelVideoSource.ID_Type.USERNAME;
-        }
-        return null;
-    }
-
-    private static int findTypeSegmentIndex(String[] segments) {
-        for(int i=0; i<segments.length; i++){
-            switch(segments[i]){
-                case "channel":
-                    return i;
-                case "user":
-                    return i;
-            }
-        }
-        return -1;
-    }
-
     public YouTubeURL(String id, YouTubeChannelVideoSource.ID_Type type){
         this.identifier = id;
         this.type = type;
