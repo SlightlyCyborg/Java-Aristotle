@@ -29,7 +29,7 @@ public class YouTubeChannelVideoSource implements VideoSource{
 
     private YouTube youtubeService;
 
-    private static final String DEVELOPER_KEY = "AIzaSyBKLyvIBmbu_cA9xGV_aNkljlP7D8OrAJ8";
+    private static final String DEVELOPER_KEY = "REPLACE ME";
 
     public static YouTubeChannelVideoSource getByYouTubeURL(String youtubeURL) throws GeneralSecurityException, IOException {
         YouTubeURL url = new YouTubeURL(youtubeURL);
@@ -74,7 +74,9 @@ public class YouTubeChannelVideoSource implements VideoSource{
         try {
             String uploadPlaylistID = findPlaylistForAllChannelUploads();
             return findVideosInPlaylist(uploadPlaylistID, earliest, latest);
-        } catch(Exception e){}
+        } catch(Exception e){
+           System.out.println(e);
+        }
         return null;
     }
 

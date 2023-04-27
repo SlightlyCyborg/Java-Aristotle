@@ -10,17 +10,12 @@ import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.tomcat.jni.Time;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.security.GeneralSecurityException;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 public class Indexer {
 	
@@ -118,17 +113,52 @@ public class Indexer {
                 docs.add(documentToIndex);
             }
         }
-        videoConnection.add(docs);
+        if(docs.size() > 0) {
+            videoConnection.add(docs);
+        }
         log.info("added Video docs");
+    }
+
+    public static Map<String, List<String>> getQueryParams(String url) throws Exception {
+        try {
+            Map<String, List<String>> params = new HashMap<String, List<String>>();
+            String[] urlParts = url.split("\\?");
+            if (urlParts.length > 1) {
+                String query = urlParts[1];
+                for (String param : query.split("&")) {
+                    String[] pair = param.split("=");
+                    String key = URLDecoder.decode(pair[0], "UTF-8");
+                    String value = "";
+                    if (pair.length > 1) {
+                        value = URLDecoder.decode(pair[1], "UTF-8");
+                    }
+
+                    List<String> values = params.get(key);
+                    if (values == null) {
+                        values = new ArrayList<String>();
+                        params.put(key, values);
+                    }
+                    values.add(value);
+                }
+            }
+
+            return params;
+        } catch (UnsupportedEncodingException ex) {
+            throw new AssertionError(ex);
+        }
     }
 
     public static void writeURLsToFile(List<URL> urls, File f) throws IOException {
         StringBuilder sb = new StringBuilder();
         for(int i=0; i<urls.size(); i++){
-           sb.append(urls.get(i).toString());
-           if(i != urls.size()-1) {
-               sb.append("\n");
-           }
+            try {
+                Map<String, List<String>> params = getQueryParams(urls.get(i).toString());
+                String id = params.get("v").get(0);
+                sb.append(id);
+                if (i != urls.size() - 1) {
+                    sb.append("\n");
+                }
+            } catch (Exception e){}
         }
 
         FileWriter writer = new FileWriter(f);
@@ -147,7 +177,7 @@ public class Indexer {
             //Runner runner = new Runner(src.getAbsolutePath(), captionDir.getAbsolutePath());
             //runner.run();
             log.info("Downloading captions for {}", instance.getName());
-            Process proc = Runtime.getRuntime().exec(String.format("java -jar SubtitleDownloader.jar -i %s -o %s",
+            Process proc = Runtime.getRuntime().exec(String.format("python3 SubtitleDownloader.py -i %s -o %s",
                     src.getAbsolutePath(), captionDir.getAbsolutePath()));
             InputStream out = proc.getInputStream();
             InputStream err = proc.getErrorStream();
@@ -228,17 +258,7 @@ public class Indexer {
 
     private List<File> getRelevantCaptionsFromDir(File captionDir) {
         File[] files = captionDir.listFiles();
-
-        List<File> rv = new ArrayList<>();
-
-        for(int i=0; i<files.length; i++){
-            if(isEnglishSub(files[i].getName()) &&
-                    files[i].isFile() &&
-                    isSRTVersion(0, files[i].getName())){
-                rv.add(files[i]);
-            }
-        }
-        return rv;
+        return Arrays.stream(files).toList();
     }
 
 

@@ -13,13 +13,12 @@ public class YouTubeURL {
         URL url = new URL(urlToParse);
         String path = url.getPath();
         String[] segments = path.split("\\/");
-        String unparsedId = segments[segments.length-1];
-        boolean isUsername = unparsedId.charAt(0) == ('@');
+        String id = segments[segments.length-1];
+        this.identifier = id;
+        boolean isUsername = id.charAt(0) == ('@');
         if(isUsername) {
-           this.identifier = unparsedId.substring(1);
-           this.type = YouTubeChannelVideoSource.ID_Type.USERNAME;
+           this.type = YouTubeChannelVideoSource.ID_Type.UUID;
         } else {
-            this.identifier = unparsedId.substring(0);
             this.type = YouTubeChannelVideoSource.ID_Type.UUID;
         }
     }

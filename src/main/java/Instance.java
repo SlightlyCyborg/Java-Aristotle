@@ -4,7 +4,6 @@ import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
-import subtitleDownloader.Runner;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -35,7 +34,6 @@ public class Instance {
     Searcher searcher;
     Indexer indexer;
     Renderer renderer;
-    Runner stlRunner;
 
     File stlURLInput;
     File stlDir;
@@ -197,10 +195,6 @@ public class Instance {
 
     public void setUsername(String username){
         this.username = username;
-    }
-
-    void downloadSRTs(){
-        stlRunner = new Runner(stlURLInput.getAbsolutePath(), stlDir.getAbsolutePath());
     }
 
     private LocalDate getLastIndexedVideoFromSource(String sourceId) {

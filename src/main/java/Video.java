@@ -129,9 +129,9 @@ public class Video {
     }
 
     void loadCaptionBlocks(String content){
-        String[] unparsedBlocks = content.split("\r\n\r\n");
+        String[] unparsedBlocks = content.split("\n\n");
         for(int i = 0; i < unparsedBlocks.length; i++){
-            String[] parsedBlock = unparsedBlocks[i].split("\r\n");
+            String[] parsedBlock = unparsedBlocks[i].split("\n");
             String id, words, time;
             try {
             	id = parsedBlock[0];
