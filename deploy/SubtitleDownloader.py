@@ -11,8 +11,6 @@ formatter = SRTFormatter()
 # function to format transcript for easier reading
 def formatTranscript(transcript):
     # code to format transcript
-    print("transcript")
-    print(transcript)
     return formatter.format_transcript(transcript)
 
 def main():
@@ -44,15 +42,18 @@ def main():
     # read input file line by line
     with open(input_file, 'r') as f:
         for line in f:
-            # get transcript for each video
-            video_id = line.strip()
-            transcript = getTranscript(video_id)
-            # format transcript
-            formatted_transcript = formatTranscript(transcript)
-            # write formatted transcript to output directory
-            output_file_name = video_id + '.srt'
-            with open(os.path.join(output_dir, output_file_name), 'w') as out_file:
-                out_file.write(formatted_transcript)
+            try:
+                # get transcript for each video
+                video_id = line.strip()
+                transcript = getTranscript(video_id)
+                # format transcript
+                formatted_transcript = formatTranscript(transcript)
+                # write formatted transcript to output directory
+                output_file_name = video_id + '.srt'
+                with open(os.path.join(output_dir, output_file_name), 'w') as out_file:
+                    out_file.write(formatted_transcript)
+            except:
+                pass
 
 
 if __name__ == '__main__':
